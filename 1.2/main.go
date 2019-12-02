@@ -16,7 +16,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		total += fuelRequired(val)
+
+		total += totalFuelRequired(val)
 	}
 
 	log.Printf("Total: %v", total)
@@ -24,4 +25,16 @@ func main() {
 
 func fuelRequired(mass int) int {
 	return int(math.Trunc(float64(mass/3))) - 2
+}
+
+func totalFuelRequired(mass int) int {
+	total := 0
+
+	mass = fuelRequired(mass)
+	for mass > 0 {
+		total += mass
+		mass = fuelRequired(mass)
+	}
+
+	return total
 }

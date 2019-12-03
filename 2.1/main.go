@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -15,24 +16,29 @@ const (
 )
 
 func main() {
-	ics := intcodes()
+	ics, err := exec(restore(intcodes()))
+	if err != nil {
+		log.Fatal(err)
+	}
 
+	log.Printf("What value is left at position 0: %v", ics[0])
+}
+
+func exec(ics []int) ([]int, error) {
 	for i, num := 0, len(ics); i < num; i += 4 {
 		switch ics[i] {
 		case OpcodeHalt:
-			log.Println("HALT")
-			log.Printf("Output: %v", ics)
-			return
+			return ics, nil
 		case OpcodeAdd:
-			log.Println("ADD")
-			ics[i+3] = ics[i+1] + ics[i+2]
+			ics[ics[i+3]] = ics[ics[i+1]] + ics[ics[i+2]]
 		case OpcodeMult:
-			log.Println("MULTIPLY")
-			ics[i+3] = ics[i+1] * ics[i+2]
+			ics[ics[i+3]] = ics[ics[i+1]] * ics[ics[i+2]]
 		default:
-			log.Fatalf("%v is an invalid opcode", ics[i])
+			return ics, fmt.Errorf("%v is an invalid opcode", ics[i])
 		}
 	}
+
+	return ics, nil
 }
 
 func intcodes() []int {
@@ -48,4 +54,10 @@ func intcodes() []int {
 	}
 
 	return ints
+}
+
+func restore(ics []int) []int {
+	ics[1] = 12
+	ics[2] = 2
+	return ics
 }

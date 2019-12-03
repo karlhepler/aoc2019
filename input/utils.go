@@ -26,7 +26,8 @@ func Lines(filename string) <-chan string {
 	line := make(chan string)
 	scanner := bufio.NewScanner(file)
 
-	go func(scanner *bufio.Scanner) {
+	go func() {
+		defer close(line)
 		defer file.Close()
 
 		for scanner.Scan() {
@@ -34,12 +35,9 @@ func Lines(filename string) <-chan string {
 		}
 
 		if err := scanner.Err(); err != nil {
-			close(line)
 			log.Fatal(err)
 		}
-
-		close(line)
-	}(scanner)
+	}()
 
 	return line
 }

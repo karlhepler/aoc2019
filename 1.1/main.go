@@ -2,9 +2,9 @@ package main
 
 import (
 	"log"
-	"math"
 	"strconv"
 
+	"github.com/karlhepler/aoc2019/1.1/fuel"
 	"github.com/karlhepler/aoc2019/input"
 )
 
@@ -16,12 +16,8 @@ func main() {
 		if err != nil {
 			log.Fatal(err)
 		}
-		total += fuelRequired(val)
+		total += fuel.Required(val)
 	}
 
 	log.Printf("Total: %v", total)
-}
-
-func fuelRequired(mass int) int {
-	return int(math.Trunc(float64(mass/3))) - 2
 }

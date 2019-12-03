@@ -1,8 +1,10 @@
-package main
+package computer_test
 
 import (
 	"log"
 	"testing"
+
+	"github.com/karlhepler/aoc2019/2.1/computer"
 )
 
 func TestExec(t *testing.T) {
@@ -29,7 +31,7 @@ func TestExec(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		output, err := exec(tc.input)
+		output, err := computer.Exec(tc.input)
 		if err != nil {
 			log.Fatal(err)
 		}

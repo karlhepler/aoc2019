@@ -9,28 +9,89 @@ import (
 	"github.com/karlhepler/aoc2019/input"
 )
 
-type Vector [2]int
+type Diagram map[Vector]byte
 
-func main() {
-	var diagrams []map[Vector]bool
+func (d *Diagram) RunWire(a, b Vector) {
+	// implemented straight from WP pseudocode
+	dx := b[0] - a[0]
+	if dx < 0 {
+		dx = -dx
+	}
+	dy := b[1] - a[1]
+	if dy < 0 {
+		dy = -dy
+	}
+	var sx, sy int
+	if a[0] < b[0] {
+		sx = 1
+	} else {
+		sx = -1
+	}
+	if a[1] < b[1] {
+		sy = 1
+	} else {
+		sy = -1
+	}
+	err := dx - dy
 
-	for path := range input.Lines("3.1") {
-		origin := Vector{0, 0}
-		diagram := make(map[Vector]bool)
-
-		for distance := range MoveAlong(path) {
-			// don't draw the origin
+	for {
+		(*d)[Vector{a[0], a[1]}] = (*d)[Vector{a[0], a[1]}] + 1
+		if a[0] == b[0] && a[1] == b[1] {
+			break
 		}
-
-		diagrams = append(diagrams, diagram)
+		e2 := 2 * err
+		if e2 > -dy {
+			err -= dy
+			a[0] += sx
+		}
+		if e2 < dx {
+			err += dx
+			a[1] += sy
+		}
 	}
 }
 
-func MoveAlong(path string) <-chan Vector {
-	v := make(chan Vector)
+type Vector [2]int
+
+func (v Vector) Add(a Vector) Vector {
+	return Vector{
+		v[0] + a[0],
+		v[1] + a[1],
+	}
+}
+
+func (v Vector) IsOrigin() bool {
+	return v[0] == 0 && v[1] == 0
+}
+
+func main() {
+	diagram := &Diagram{}
+
+	// Build the diagrams
+	for path := range input.Lines("3.1") {
+		orig := Vector{0, 0}
+
+		for dest := range MoveAlong(path) {
+			diagram.RunWire(orig, dest)
+			orig = orig.Add(dest)
+		}
+	}
+
+	// Print out where the wires cross
+	for pos, val := range *diagram {
+		if val > 1 && !pos.IsOrigin() {
+			log.Println(pos)
+		}
+	}
+}
+
+// MoveAlong scans the comma-separated input path string, sending vectors for
+// each step (next destination) along the path.
+func MoveAlong(path string) (destination <-chan Vector) {
+	dest := make(chan Vector)
 
 	go func() {
-		defer close(v)
+		defer close(dest)
 
 		scanner := bufio.NewScanner(strings.NewReader(path))
 		scanner.Split(ScanCSVs)
@@ -38,13 +99,13 @@ func MoveAlong(path string) <-chan Vector {
 		for scanner.Scan() {
 			switch mov := scanner.Bytes(); mov[0] {
 			case 'U':
-				v <- Vector{0, Btoi(mov[1:])}
+				dest <- Vector{0, Btoi(mov[1:])}
 			case 'R':
-				v <- Vector{Btoi(mov[1:]), 0}
+				dest <- Vector{Btoi(mov[1:]), 0}
 			case 'D':
-				v <- Vector{0, -Btoi(mov[1:])}
+				dest <- Vector{0, -Btoi(mov[1:])}
 			case 'L':
-				v <- Vector{-Btoi(mov[1:]), 0}
+				dest <- Vector{-Btoi(mov[1:]), 0}
 			default:
 				log.Fatalf("%s is an invalid direction", string(mov[0]))
 			}
@@ -55,7 +116,7 @@ func MoveAlong(path string) <-chan Vector {
 		}
 	}()
 
-	return v
+	return dest
 }
 
 func Btoi(b []byte) int {

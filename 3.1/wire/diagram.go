@@ -2,11 +2,6 @@ package wire
 
 type Diagram map[Vector]byte
 
-func (d Diagram) AtOrigin(p Vector) bool {
-	o := d.Origin()
-	return p[0] == o[0] && p[1] == o[1]
-}
-
 func (d Diagram) Origin() Vector {
 	return Vector{0, 0}
 }

@@ -14,6 +14,7 @@ func TestValidatorValid(t *testing.T) {
 		{[]byte("112233"), true},
 		{[]byte("123444"), false},
 		{[]byte("111122"), true},
+		{[]byte("111111"), false},
 	}
 
 	v := pass.Validator{

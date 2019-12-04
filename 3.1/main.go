@@ -16,10 +16,8 @@ func main() {
 	for path := range input.Lines("3.1") {
 		start := origin
 
-		for end := range wire.MoveAlong(path) {
-			log.Printf("RunWire %v->%v\n", start, end)
-			diagram.RunWire(start, end)
-			start = start.Add(end)
+		for move := range wire.MoveAlong(path) {
+			start = diagram.RunWire(start, move)
 		}
 	}
 

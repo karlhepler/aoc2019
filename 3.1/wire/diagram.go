@@ -1,7 +1,5 @@
 package wire
 
-import "log"
-
 type Diagram map[Vector]byte
 
 func (d Diagram) AtOrigin(p Vector) bool {
@@ -25,7 +23,6 @@ func (d *Diagram) RunWire(start, move Vector) (end Vector) {
 		start = start.Add(delta)
 		move = move.Sub(delta)
 
-		log.Printf("SetPoint %v->%v\n", start, move)
 		d.SetPoint(start)
 	}
 

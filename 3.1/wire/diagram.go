@@ -1,5 +1,24 @@
 package wire
 
+import (
+	"github.com/karlhepler/aoc2019/input"
+)
+
+func BuildDiagram() (diagram *Diagram, layers byte) {
+	diagram = &Diagram{}
+
+	for path := range input.Lines("3.1") {
+		layers++
+		start := diagram.Origin()
+
+		for move := range MoveAlong(path) {
+			start = diagram.RunWire(start, move, layers)
+		}
+	}
+
+	return
+}
+
 type Diagram map[Vector]byte
 
 func (d Diagram) Origin() Vector {

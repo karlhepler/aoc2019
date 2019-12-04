@@ -1,7 +1,7 @@
 package main
 
-import "fmt"
-
 func main() {
-	fmt.Println("vim-go")
+	// 1. Find all intersections
+	// 2. Run wires until intersection first intersection is reached
+	// 3. Print total number of steps taken
 }

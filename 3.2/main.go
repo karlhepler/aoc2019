@@ -1,7 +1,52 @@
 package main
 
+import (
+	"log"
+	"math"
+
+	"github.com/karlhepler/aoc2019/3.1/wire"
+	"github.com/karlhepler/aoc2019/input"
+)
+
 func main() {
-	// 1. Find all intersections
-	// 2. Run wires until intersection first intersection is reached
-	// 3. Print total number of steps taken
+	diagram, xings := wire.BuildDiagram()
+
+	var steps float64
+	for _, xing := range xings {
+		if steps == 0 {
+			steps = CountSteps(diagram, xing)
+			continue
+		}
+
+		steps = math.Min(steps, CountSteps(diagram, xing))
+	}
+
+	log.Println(steps)
+}
+
+func CountSteps(diagram *wire.Diagram, stop wire.Vector) (steps float64) {
+	for path := range input.Lines("3.1") {
+		start := diagram.Origin()
+
+		for move := range wire.MoveAlong(path) {
+			if start == stop {
+				break
+			}
+
+			delta := move.Unit()
+
+			for {
+				if move.Empty() || start == stop {
+					break
+				}
+
+				start = start.Add(delta)
+				move = move.Sub(delta)
+
+				steps++
+			}
+		}
+	}
+
+	return steps
 }

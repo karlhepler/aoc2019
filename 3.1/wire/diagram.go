@@ -36,7 +36,7 @@ func (d Diagram) Origin() Vector {
 }
 
 // RunWire runs a wire from start (exclusive) to end (inclusive)
-func (d *Diagram) RunWire(start, move Vector, i byte) (end Vector) {
+func (d *Diagram) RunWire(start, move Vector, layers byte) (end Vector) {
 	delta := move.Unit()
 
 	for {
@@ -47,12 +47,12 @@ func (d *Diagram) RunWire(start, move Vector, i byte) (end Vector) {
 		start = start.Add(delta)
 		move = move.Sub(delta)
 
-		d.SetPoint(start, i)
+		d.SetPoint(start, layers)
 	}
 
 	return start
 }
 
-func (d *Diagram) SetPoint(point Vector, b byte) {
-	(*d)[point] = ((*d)[point] * b) + 1
+func (d *Diagram) SetPoint(point Vector, layers byte) {
+	(*d)[point] = ((*d)[point] * layers) + 1
 }

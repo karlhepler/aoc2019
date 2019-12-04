@@ -70,12 +70,14 @@ func TestCheckAdjacent(t *testing.T) {
 		{[]byte("1114"), true},
 		{[]byte("12345332356"), false},
 		{[]byte("1235222968"), true},
+		{[]byte("111"), true},
+		{[]byte("1114"), true},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tcs {
 		result := pass.CheckAdjacent(tc.bs, numAdjacent)
 		if result != tc.expected {
-			t.Errorf("Expected %v; Received %v", tc.expected, result)
+			t.Errorf("%d. Expected %v; Received %v", i, tc.expected, result)
 		}
 	}
 }

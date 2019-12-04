@@ -54,6 +54,7 @@ func CheckRange(bs []byte, lower, upper int) bool {
 // CheckAdjacent returns true if bs have at least one set of adjacent bytes of length n
 func CheckAdjacent(bs []byte, n int) bool {
 	count := 0
+
 	for i, b := range bs {
 		if i == 0 {
 			continue
@@ -69,6 +70,7 @@ func CheckAdjacent(bs []byte, n int) bool {
 			return true
 		}
 	}
+
 	return false
 }
 

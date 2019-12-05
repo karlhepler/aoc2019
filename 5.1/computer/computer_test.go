@@ -60,6 +60,10 @@ func TestExec(t *testing.T) {
 			input:    []int{1002, 4, 3, 4, 33},
 			expected: []int{1002, 4, 3, 4, 99},
 		},
+		{
+			input:    []int{3, 5, 42, 99, 123, 234},
+			expected: []int{3, 5, 42, 99, 123, 42},
+		},
 	}
 
 	for i, tc := range tcs {

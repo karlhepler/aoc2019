@@ -50,11 +50,11 @@ func Exec(prgm []int) ([]int, error) {
 			}
 			i += 4
 		case OpcodeInput:
-			i += 2
-			//
+			prgm[prgm[i+1]] = prgm[i+2]
+			i += 3
 		case OpcodeOutput:
-			i += 2
 			//
+			i += 2
 		default:
 			return prgm, fmt.Errorf("%v is an invalid opcode", prgm[i])
 		}

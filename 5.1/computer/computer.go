@@ -28,7 +28,7 @@ const (
 )
 
 func Exec(prgm []int) ([]int, error) {
-	for i, num := 0, len(prgm); i < num; i += 4 {
+	for i, num := 0, len(prgm); i < num; {
 		opcode, modes, err := ParseOpcode(prgm[i])
 		if err != nil {
 			return prgm, err
@@ -42,14 +42,18 @@ func Exec(prgm []int) ([]int, error) {
 			if err := Add(&prgm, modes, params); err != nil {
 				return prgm, err
 			}
+			i += 4
 		case computer.OpcodeMult:
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Multiply(&prgm, modes, params); err != nil {
 				return prgm, err
 			}
+			i += 4
 		case OpcodeInput:
+			i += 2
 			//
 		case OpcodeOutput:
+			i += 2
 			//
 		default:
 			return prgm, fmt.Errorf("%v is an invalid opcode", prgm[i])

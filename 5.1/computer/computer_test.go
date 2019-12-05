@@ -35,7 +35,7 @@ func TestParseOpcode(t *testing.T) {
 	}
 }
 
-func TestExecOrig(t *testing.T) {
+func TestExec(t *testing.T) {
 	tcs := []struct {
 		input    []int
 		expected []int

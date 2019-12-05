@@ -7,6 +7,13 @@ import (
 	comp5 "github.com/karlhepler/aoc2019/5.1/computer"
 )
 
+type ComparisonOperator byte
+
+const (
+	Equals ComparisonOperator = iota + 1
+	LessThan
+)
+
 const (
 	// OpcodeJumpTrue: if the first parameter is non-zero, it sets the
 	// instruction pointer to the value from the second parameter. Otherwise,
@@ -82,9 +89,17 @@ func Exec(prgm []int, input int) (int, error) {
 			}
 
 		case OpcodeLessThan:
+			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
+			if err := Compare(LessThan, &prgm, modes, params); err != nil {
+				return -1, err
+			}
 			i += 4
 
 		case OpcodeEquals:
+			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
+			if err := Compare(Equals, &prgm, modes, params); err != nil {
+				return -1, err
+			}
 			i += 4
 
 		default:
@@ -101,16 +116,34 @@ func JumpIf(cond bool, i *int, prgm *[]int, modes [3]int, params [2]*int) error 
 		return err
 	}
 
-	switch cond {
-	case true:
-		if *vals[0] != 0 {
-			*i = *vals[1]
-		}
-	case false:
-		if *vals[0] != 0 {
-			*i = *vals[1]
-		}
+	switch {
+	case cond == true && *(vals[0]) != 0:
+		*i = *(vals[1])
+	case cond == false && *(vals[0]) == 0:
+		*i = *(vals[1])
 	}
+
+	return nil
+}
+
+func Compare(op ComparisonOperator, prgm *[]int, modes [3]int, params [3]*int) error {
+	vals, err := comp5.ParseParams(prgm, modes, params[:])
+	if err != nil {
+		return err
+	}
+
+	var val = 0
+
+	switch {
+	case op == Equals && *(vals[0]) == *(vals[1]):
+		val = 1
+	case op == LessThan && *(vals[0]) < *(vals[1]):
+		val = 1
+	default:
+		return fmt.Errorf("%v is an invalid comparison operator", op)
+	}
+
+	*(vals[2]) = val
 
 	return nil
 }

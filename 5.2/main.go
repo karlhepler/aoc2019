@@ -8,7 +8,7 @@ import (
 )
 
 func main() {
-	code, err := computer.Exec(input.Program("5.1"), 1)
+	code, err := computer.Exec(input.Program(), 5)
 	if err != nil {
 		log.Fatal(err)
 	}

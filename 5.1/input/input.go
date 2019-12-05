@@ -8,8 +8,8 @@ import (
 	"github.com/karlhepler/aoc2019/input"
 )
 
-func Program(filename string) (prgm []int) {
-	strs := strings.Split(<-input.Lines(filename), ",")
+func Program() (prgm []int) {
+	strs := strings.Split(<-input.Lines("5.1"), ",")
 	prgm = make([]int, len(strs))
 
 	for i, s := range strs {

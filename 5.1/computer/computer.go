@@ -2,6 +2,7 @@ package computer
 
 import (
 	"fmt"
+	"log"
 	"strconv"
 
 	"github.com/karlhepler/aoc2019/2.1/computer"
@@ -37,26 +38,33 @@ func Exec(prgm []int, input int) (int, error) {
 		switch opcode {
 		case computer.OpcodeHalt:
 			return 0, nil
+
 		case computer.OpcodeAdd:
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Add(&prgm, modes, params); err != nil {
 				return 1, err
 			}
 			i += 4
+
 		case computer.OpcodeMult:
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Multiply(&prgm, modes, params); err != nil {
 				return 1, err
 			}
 			i += 4
+
 		case OpcodeInput:
 			prgm[prgm[i+1]] = input
 			i += 2
+
 		case OpcodeOutput:
-			if output := prgm[i+1]; output != 0 {
-				return 1, nil
+			output := prgm[prgm[i+1]]
+			log.Printf("Output: %d", output)
+			if output != 0 {
+				return output, nil
 			}
 			i += 2
+
 		default:
 			return 1, fmt.Errorf("%v is an invalid opcode", prgm[i])
 		}

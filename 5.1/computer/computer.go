@@ -2,7 +2,6 @@ package computer
 
 import (
 	"fmt"
-	"log"
 	"strconv"
 
 	"github.com/karlhepler/aoc2019/2.1/computer"
@@ -32,7 +31,7 @@ func Exec(prgm []int, input int) (int, error) {
 	for i, num := 0, len(prgm); i < num; {
 		opcode, modes, err := ParseOpcode(prgm[i])
 		if err != nil {
-			return 1, err
+			return -1, err
 		}
 
 		switch opcode {
@@ -42,14 +41,14 @@ func Exec(prgm []int, input int) (int, error) {
 		case computer.OpcodeAdd:
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Add(&prgm, modes, params); err != nil {
-				return 1, err
+				return -1, err
 			}
 			i += 4
 
 		case computer.OpcodeMult:
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Multiply(&prgm, modes, params); err != nil {
-				return 1, err
+				return -1, err
 			}
 			i += 4
 
@@ -58,19 +57,22 @@ func Exec(prgm []int, input int) (int, error) {
 			i += 2
 
 		case OpcodeOutput:
-			output := prgm[prgm[i+1]]
-			log.Printf("Output: %d", output)
+			output, err := Output(&prgm, modes, &prgm[i+1])
+			if err != nil {
+				return -1, err
+			}
+
 			if output != 0 {
 				return output, nil
 			}
 			i += 2
 
 		default:
-			return 1, fmt.Errorf("%v is an invalid opcode", prgm[i])
+			return -1, fmt.Errorf("%v is an invalid opcode", prgm[i])
 		}
 	}
 
-	return 0, nil
+	return -1, nil
 }
 
 func ParseOpcode(oc int) (opcode int, modes [3]int, err error) {
@@ -95,7 +97,7 @@ func ParseOpcode(oc int) (opcode int, modes [3]int, err error) {
 }
 
 func Add(prgm *[]int, modes [3]int, params [3]*int) error {
-	vals, err := ParseParams(prgm, modes, params)
+	vals, err := ParseParams(prgm, modes, params[:])
 	if err != nil {
 		return err
 	}
@@ -106,7 +108,7 @@ func Add(prgm *[]int, modes [3]int, params [3]*int) error {
 }
 
 func Multiply(prgm *[]int, modes [3]int, params [3]*int) error {
-	vals, err := ParseParams(prgm, modes, params)
+	vals, err := ParseParams(prgm, modes, params[:])
 	if err != nil {
 		return err
 	}
@@ -116,20 +118,26 @@ func Multiply(prgm *[]int, modes [3]int, params [3]*int) error {
 	return nil
 }
 
-func ParseParams(prgm *[]int, modes [3]int, params [3]*int) ([3]*int, error) {
-	var vals [3]*int
+func Output(prgm *[]int, modes [3]int, param *int) (int, error) {
+	params, err := ParseParams(prgm, modes, []*int{param})
+	return *params[0], err
+}
 
-	for i, m := range modes {
-		switch m {
+func ParseParams(prgm *[]int, modes [3]int, params []*int) ([]*int, error) {
+	vals := make([]*int, len(params))
+
+	if len(params) > 3 {
+		return vals, fmt.Errorf("len(params) must be no greater than 3")
+	}
+
+	for i := range params {
+		switch modes[i] {
 		case ImmediateMode:
 			vals[i] = params[i]
-			if i == 2 {
-				return vals, fmt.Errorf("Unexpected immediate mode for last param.")
-			}
 		case PositionMode:
 			vals[i] = &(*prgm)[*params[i]]
 		default:
-			return vals, fmt.Errorf("%v is an invalid parameter mode.", m)
+			return vals, fmt.Errorf("%v is an invalid parameter mode.", modes[i])
 		}
 	}
 

@@ -27,40 +27,42 @@ const (
 	ImmediateMode = 1
 )
 
-func Exec(prgm []int) ([]int, error) {
+func Exec(prgm []int, input int) (int, error) {
 	for i, num := 0, len(prgm); i < num; {
 		opcode, modes, err := ParseOpcode(prgm[i])
 		if err != nil {
-			return prgm, err
+			return 1, err
 		}
 
 		switch opcode {
 		case computer.OpcodeHalt:
-			return prgm, nil
+			return 0, nil
 		case computer.OpcodeAdd:
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Add(&prgm, modes, params); err != nil {
-				return prgm, err
+				return 1, err
 			}
 			i += 4
 		case computer.OpcodeMult:
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Multiply(&prgm, modes, params); err != nil {
-				return prgm, err
+				return 1, err
 			}
 			i += 4
 		case OpcodeInput:
-			prgm[prgm[i+1]] = prgm[i+2]
-			i += 3
+			prgm[prgm[i+1]] = input
+			i += 2
 		case OpcodeOutput:
-			//
+			if output := prgm[i+1]; output != 0 {
+				return 1, nil
+			}
 			i += 2
 		default:
-			return prgm, fmt.Errorf("%v is an invalid opcode", prgm[i])
+			return 1, fmt.Errorf("%v is an invalid opcode", prgm[i])
 		}
 	}
 
-	return prgm, nil
+	return 0, nil
 }
 
 func ParseOpcode(oc int) (opcode int, modes [3]int, err error) {

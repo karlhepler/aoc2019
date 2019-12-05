@@ -36,58 +36,45 @@ func TestParseOpcode(t *testing.T) {
 }
 
 func TestExec(t *testing.T) {
+	input := 42
 	tcs := []struct {
 		input    []int
-		expected []int
+		expected int
 	}{
 		{
 			input:    []int{1, 0, 0, 0, 99},
-			expected: []int{2, 0, 0, 0, 99},
+			expected: 0,
 		},
 		{
 			input:    []int{2, 3, 0, 3, 99},
-			expected: []int{2, 3, 0, 6, 99},
+			expected: 0,
 		},
 		{
 			input:    []int{2, 4, 4, 5, 99, 0},
-			expected: []int{2, 4, 4, 5, 99, 9801},
+			expected: 0,
 		},
 		{
 			input:    []int{1, 1, 1, 4, 99, 5, 6, 0, 99},
-			expected: []int{30, 1, 1, 4, 2, 5, 6, 0, 99},
+			expected: 0,
 		},
 		{
 			input:    []int{1002, 4, 3, 4, 33},
-			expected: []int{1002, 4, 3, 4, 99},
+			expected: 0,
 		},
 		{
-			input:    []int{3, 5, 42, 99, 123, 234},
-			expected: []int{3, 5, 42, 99, 123, 42},
+			input:    []int{3, 4, 99, 123, 234},
+			expected: 0,
 		},
 	}
 
 	for i, tc := range tcs {
-		output, err := computer.Exec(tc.input)
+		output, err := computer.Exec(tc.input, input)
 		if err != nil {
 			log.Fatal(err)
 		}
 
-		if !equal(tc.expected, output) {
+		if tc.expected != output {
 			t.Errorf("%d. Expected %v; Received %v", i, tc.expected, output)
 		}
 	}
-}
-
-func equal(a, b []int) bool {
-	if len(a) != len(b) {
-		return false
-	}
-
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
-
-	return true
 }

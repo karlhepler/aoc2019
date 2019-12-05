@@ -2,6 +2,7 @@ package computer
 
 import (
 	"fmt"
+	"log"
 
 	comp2 "github.com/karlhepler/aoc2019/2.1/computer"
 	comp5 "github.com/karlhepler/aoc2019/5.1/computer"
@@ -45,9 +46,11 @@ func Exec(prgm []int, input int) (int, error) {
 
 		switch opcode {
 		case comp2.OpcodeHalt:
+			log.Printf("OpcodeHalt: %d", i)
 			return 0, nil
 
 		case comp2.OpcodeAdd:
+			log.Printf("OpcodeAdd: %d", i)
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := comp5.Add(&prgm, modes, params); err != nil {
 				return -1, err
@@ -55,6 +58,7 @@ func Exec(prgm []int, input int) (int, error) {
 			i += 4
 
 		case comp2.OpcodeMult:
+			log.Printf("OpcodeMult: %d", i)
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := comp5.Multiply(&prgm, modes, params); err != nil {
 				return -1, err
@@ -62,10 +66,12 @@ func Exec(prgm []int, input int) (int, error) {
 			i += 4
 
 		case comp5.OpcodeInput:
+			log.Printf("OpcodeInput: %d", i)
 			prgm[prgm[i+1]] = input
 			i += 2
 
 		case comp5.OpcodeOutput:
+			log.Printf("OpcodeOutput: %d", i)
 			output, err := comp5.Output(&prgm, modes, &prgm[i+1])
 			if err != nil {
 				return -1, err
@@ -77,18 +83,21 @@ func Exec(prgm []int, input int) (int, error) {
 			i += 2
 
 		case OpcodeJumpTrue:
+			log.Printf("OpcodeJumpTrue: %d", i)
 			params := [2]*int{&prgm[i+1], &prgm[i+2]}
 			if err := JumpIf(true, &i, &prgm, modes, params); err != nil {
 				return -1, err
 			}
 
 		case OpcodeJumpFalse:
+			log.Printf("OpcodeJumpFalse: %d", i)
 			params := [2]*int{&prgm[i+1], &prgm[i+2]}
 			if err := JumpIf(false, &i, &prgm, modes, params); err != nil {
 				return -1, err
 			}
 
 		case OpcodeLessThan:
+			log.Printf("OpcodeLessThan: %d", i)
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Compare(LessThan, &prgm, modes, params); err != nil {
 				return -1, err
@@ -96,6 +105,7 @@ func Exec(prgm []int, input int) (int, error) {
 			i += 4
 
 		case OpcodeEquals:
+			log.Printf("OpcodeEquals: %d", i)
 			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
 			if err := Compare(Equals, &prgm, modes, params); err != nil {
 				return -1, err
@@ -121,6 +131,8 @@ func JumpIf(cond bool, i *int, prgm *[]int, modes [3]int, params [2]*int) error 
 		*i = *(vals[1])
 	case cond == false && *(vals[0]) == 0:
 		*i = *(vals[1])
+	default:
+		*i += 3
 	}
 
 	return nil
@@ -135,10 +147,14 @@ func Compare(op ComparisonOperator, prgm *[]int, modes [3]int, params [3]*int) e
 	var val = 0
 
 	switch {
-	case op == Equals && *(vals[0]) == *(vals[1]):
-		val = 1
-	case op == LessThan && *(vals[0]) < *(vals[1]):
-		val = 1
+	case op == Equals:
+		if *(vals[0]) == *(vals[1]) {
+			val = 1
+		}
+	case op == LessThan:
+		if *(vals[0]) < *(vals[1]) {
+			val = 1
+		}
 	default:
 		return fmt.Errorf("%v is an invalid comparison operator", op)
 	}

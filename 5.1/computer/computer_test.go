@@ -56,16 +56,20 @@ func TestExecOrig(t *testing.T) {
 			input:    []int{1, 1, 1, 4, 99, 5, 6, 0, 99},
 			expected: []int{30, 1, 1, 4, 2, 5, 6, 0, 99},
 		},
+		{
+			input:    []int{1002, 4, 3, 4, 33},
+			expected: []int{1002, 4, 3, 4, 99},
+		},
 	}
 
-	for _, tc := range tcs {
+	for i, tc := range tcs {
 		output, err := computer.Exec(tc.input)
 		if err != nil {
 			log.Fatal(err)
 		}
 
 		if !equal(tc.expected, output) {
-			t.Errorf("Expected %v; Received %v", tc.expected, output)
+			t.Errorf("%d. Expected %v; Received %v", i, tc.expected, output)
 		}
 	}
 }

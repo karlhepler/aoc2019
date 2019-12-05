@@ -29,7 +29,7 @@ const (
 
 func Exec(prgm []int) ([]int, error) {
 	for i, num := 0, len(prgm); i < num; i += 4 {
-		opcode, _, err := ParseOpcode(prgm[i])
+		opcode, modes, err := ParseOpcode(prgm[i])
 		if err != nil {
 			return prgm, err
 		}
@@ -38,9 +38,15 @@ func Exec(prgm []int) ([]int, error) {
 		case computer.OpcodeHalt:
 			return prgm, nil
 		case computer.OpcodeAdd:
-			Add(&prgm, prgm[i+1], prgm[i+2], prgm[i+3])
+			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
+			if err := Add(&prgm, modes, params); err != nil {
+				return prgm, err
+			}
 		case computer.OpcodeMult:
-			Multiply(&prgm, prgm[i+1], prgm[i+2], prgm[i+3])
+			params := [3]*int{&prgm[i+1], &prgm[i+2], &prgm[i+3]}
+			if err := Multiply(&prgm, modes, params); err != nil {
+				return prgm, err
+			}
 		case OpcodeInput:
 			//
 		case OpcodeOutput:
@@ -74,10 +80,44 @@ func ParseOpcode(oc int) (opcode int, modes [3]int, err error) {
 	return
 }
 
-func Add(prgm *[]int, p1, p2, p3 int) {
-	(*prgm)[p3] = (*prgm)[p1] + (*prgm)[p2]
+func Add(prgm *[]int, modes [3]int, params [3]*int) error {
+	vals, err := ParseParams(prgm, modes, params)
+	if err != nil {
+		return err
+	}
+
+	*(vals[2]) = *(vals[0]) + *(vals[1])
+
+	return nil
 }
 
-func Multiply(prgm *[]int, p1, p2, p3 int) {
-	(*prgm)[p3] = (*prgm)[p1] * (*prgm)[p2]
+func Multiply(prgm *[]int, modes [3]int, params [3]*int) error {
+	vals, err := ParseParams(prgm, modes, params)
+	if err != nil {
+		return err
+	}
+
+	*(vals[2]) = *(vals[0]) * *(vals[1])
+
+	return nil
+}
+
+func ParseParams(prgm *[]int, modes [3]int, params [3]*int) ([3]*int, error) {
+	var vals [3]*int
+
+	for i, m := range modes {
+		switch m {
+		case ImmediateMode:
+			vals[i] = params[i]
+			if i == 2 {
+				return vals, fmt.Errorf("Unexpected immediate mode for last param.")
+			}
+		case PositionMode:
+			vals[i] = &(*prgm)[*params[i]]
+		default:
+			return vals, fmt.Errorf("%v is an invalid parameter mode.", m)
+		}
+	}
+
+	return vals, nil
 }

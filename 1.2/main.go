@@ -1,14 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
+	"time"
 
 	"github.com/karlhepler/aoc2019/1.2/fuel"
 	"github.com/karlhepler/aoc2019/input"
 )
 
 func main() {
+	start := time.Now()
+
 	total := 0
 
 	for line := range input.Lines("1.1") {
@@ -21,4 +25,6 @@ func main() {
 	}
 
 	log.Printf("Total: %v", total)
+
+	fmt.Printf("Time: %v\n", time.Since(start))
 }

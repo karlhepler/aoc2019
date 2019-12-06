@@ -1,13 +1,17 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
+	"time"
 
 	"github.com/karlhepler/aoc2019/3.1/wire"
 )
 
 func main() {
+	start := time.Now()
+
 	diagram, xings := wire.BuildDiagram()
 	origin := diagram.Origin()
 
@@ -23,4 +27,6 @@ func main() {
 	}
 
 	log.Println(closest)
+
+	fmt.Printf("Time: %v\n", time.Since(start))
 }

@@ -1,15 +1,19 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/karlhepler/aoc2019/4.2/pass"
 	"github.com/karlhepler/aoc2019/input"
 )
 
 func main() {
+	start := time.Now()
+
 	line := <-input.Lines("4.1")
 	upper, lower := bounds(line)
 
@@ -29,6 +33,8 @@ func main() {
 	}
 
 	log.Printf("Num Valid: %v", len(valid))
+
+	fmt.Printf("Time: %v\n", time.Since(start))
 }
 
 func bounds(s string) (upper, lower int) {

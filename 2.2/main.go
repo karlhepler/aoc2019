@@ -2,19 +2,25 @@ package main
 
 import (
 	"errors"
+	"fmt"
 	"log"
+	"time"
 
 	"github.com/karlhepler/aoc2019/2.1/computer"
 	"github.com/karlhepler/aoc2019/2.1/input"
 )
 
 func main() {
+	start := time.Now()
+
 	ans, err := answer()
 	if err != nil {
 		log.Fatal(err)
 	}
 
 	log.Printf("Answer: %v\n", ans)
+
+	fmt.Printf("Time: %v\n", time.Since(start))
 }
 
 func answer() (int, error) {

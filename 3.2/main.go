@@ -1,14 +1,18 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math"
+	"time"
 
 	"github.com/karlhepler/aoc2019/3.1/wire"
 	"github.com/karlhepler/aoc2019/input"
 )
 
 func main() {
+	start := time.Now()
+
 	diagram, xings := wire.BuildDiagram()
 
 	var steps float64
@@ -22,6 +26,8 @@ func main() {
 	}
 
 	log.Println(steps)
+
+	fmt.Printf("Time: %v\n", time.Since(start))
 }
 
 func CountSteps(diagram *wire.Diagram, stop wire.Vector) (steps float64) {

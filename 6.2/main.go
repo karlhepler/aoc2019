@@ -10,5 +10,5 @@ import (
 func main() {
 	m := orbit.NewMap()
 	orbit.BuildMap(m, input.Lines("6.1"))
-	log.Printf("Number of Orbits: %d", m.NumOrbits())
+	log.Printf("Number of Orbital Transfers: %d", m.NumOrbitalTransfers("YOU", "SAN"))
 }

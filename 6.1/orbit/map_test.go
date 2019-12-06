@@ -6,7 +6,7 @@ import (
 	"github.com/karlhepler/aoc2019/6.1/orbit"
 )
 
-func TestCountOrbits(t *testing.T) {
+func TestNumOrbits(t *testing.T) {
 	tcs := []struct {
 		lines    []string
 		expected int

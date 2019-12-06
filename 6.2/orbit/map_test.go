@@ -6,14 +6,14 @@ import (
 	"github.com/karlhepler/aoc2019/6.2/orbit"
 )
 
-func TestCountOrbits(t *testing.T) {
+func TestNumOrbitalTransfers(t *testing.T) {
 	tcs := []struct {
 		lines    []string
 		expected int
 	}{
 		{
-			lines:    []string{"COM)B", "B)C", "C)D", "D)E", "E)F", "B)G", "G)H", "D)I", "E)J", "J)K", "K)L"},
-			expected: 42,
+			lines:    []string{"COM)B", "B)C", "C)D", "D)E", "E)F", "B)G", "G)H", "D)I", "E)J", "J)K", "K)L", "K)YOU", "I)SAN"},
+			expected: 4,
 		},
 	}
 
@@ -30,8 +30,8 @@ func TestCountOrbits(t *testing.T) {
 		m := orbit.NewMap()
 		orbit.BuildMap(m, lineschan)
 
-		if numOrbits := m.NumOrbits(); numOrbits != tc.expected {
-			t.Errorf("%d. Expected: %d; Received: %d", i, tc.expected, numOrbits)
+		if xfers := m.NumOrbitalTransfers("YOU", "SAN"); xfers != tc.expected {
+			t.Errorf("%d. Expected: %d; Received: %d", i, tc.expected, xfers)
 		}
 	}
 }

@@ -5,9 +5,7 @@ import (
 )
 
 // BuildMap builds the map from given lines of input
-func BuildMap(lines <-chan string) Map {
-	m := make(Map)
-
+func BuildMap(m Planeter, lines <-chan string) {
 	for line := range lines {
 		planetIDs := strings.Split(line, ")")
 
@@ -16,8 +14,16 @@ func BuildMap(lines <-chan string) Map {
 
 		p2.Orbits(p1)
 	}
+}
 
-	return m
+// Planeter defines a Planet method that receives a pid and returns a Planet pointer
+type Planeter interface {
+	Planet(pid interface{}) *Planet
+}
+
+// NewMap returns a pointer to a new Map
+func NewMap() *Map {
+	return &Map{}
 }
 
 // Map represents the map of planets and their orbits

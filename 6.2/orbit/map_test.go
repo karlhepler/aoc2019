@@ -3,7 +3,7 @@ package orbit_test
 import (
 	"testing"
 
-	"github.com/karlhepler/aoc2019/6.1/orbit"
+	"github.com/karlhepler/aoc2019/6.2/orbit"
 )
 
 func TestCountOrbits(t *testing.T) {

@@ -34,7 +34,7 @@ type Map map[interface{}]*Planet
 func (m *Map) Planet(pid interface{}) *Planet {
 	p, ok := (*m)[pid]
 	if !ok {
-		(*m)[pid] = &Planet{Moons: make([]*Planet, 0)}
+		(*m)[pid] = &Planet{ID: pid, Moons: make([]*Planet, 0)}
 		p = (*m)[pid]
 	}
 	return p
@@ -51,12 +51,14 @@ func (m Map) NumOrbits() (num int) {
 
 // Planet represents a planet in the Map
 type Planet struct {
-	ID    interface{}
-	Moons []*Planet
+	ID     interface{}
+	Moons  []*Planet
+	Parent *Planet
 }
 
 // Orbits updates the Map to show that planet a orbits planet b
 func (a *Planet) Orbits(b *Planet) {
+	a.Parent = b
 	b.Moons = append(b.Moons, a)
 }
 

@@ -30,7 +30,11 @@ func TestNumOrbitalTransfers(t *testing.T) {
 		m := orbit.NewMap()
 		orbit.BuildMap(m, lineschan)
 
-		if xfers := m.NumOrbitalTransfers("YOU", "SAN"); xfers != tc.expected {
+		xfers, err := m.NumOrbitalTransfers("YOU", "SAN")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if xfers != tc.expected {
 			t.Errorf("%d. Expected: %d; Received: %d", i, tc.expected, xfers)
 		}
 	}

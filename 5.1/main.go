@@ -12,7 +12,7 @@ import (
 func main() {
 	start := time.Now()
 
-	code, err := computer.Exec(input.Program(), 1)
+	code, err := computer.Exec(input.Program("5.1"), 1)
 	if err != nil {
 		log.Fatal(err)
 	}

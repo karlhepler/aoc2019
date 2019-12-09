@@ -36,7 +36,9 @@ const (
 	OpcodeEquals = 8
 )
 
-func Exec(prgm []int, input int) (int, error) {
+func Exec(prgm []int, inputs ...int) (int, error) {
+	inputIndex := 0
+
 	for i, num := 0, len(prgm); i < num; {
 		opcode, modes, err := comp5.ParseOpcode(prgm[i])
 		if err != nil {
@@ -62,7 +64,8 @@ func Exec(prgm []int, input int) (int, error) {
 			i += 4
 
 		case comp5.OpcodeInput:
-			prgm[prgm[i+1]] = input
+			prgm[prgm[i+1]] = inputs[inputIndex]
+			inputIndex++
 			i += 2
 
 		case comp5.OpcodeOutput:

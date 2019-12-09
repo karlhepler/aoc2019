@@ -7,7 +7,7 @@ import (
 func NewAmplifierChain(prgm []int, phaseSettings [5]int) (chain AmplifierChain) {
 	for i := range chain {
 		chain[i] = Amplifier{
-			Program:      append(prgm[:0:0], prgm...),
+			Program:      clone(prgm),
 			PhaseSetting: phaseSettings[i],
 		}
 	}
@@ -46,4 +46,8 @@ type Amplifier struct {
 func (amp Amplifier) Exec(input int) (output int, err error) {
 	output, err = computer.Exec(amp.Program, amp.PhaseSetting, input)
 	return
+}
+
+func clone(prgm []int) []int {
+	return append(prgm[:0:0], prgm...)
 }

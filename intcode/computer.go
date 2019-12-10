@@ -32,6 +32,26 @@ const (
 	// OpcodeOutput outputs the value of its only parameter. For example, the
 	// instruction 4,50 would output the value at address 50.
 	OpcodeOutput = 4
+
+	// OpcodeJumpTrue: if the first parameter is non-zero, it sets the
+	// instruction pointer to the value from the second parameter. Otherwise,
+	// it does nothing.
+	OpcodeJumpIfTrue = 5
+
+	// OpcodeJumpFalse: if the first parameter is zero, it sets the instruction
+	// pointer to the value from the second parameter. Otherwise, it does
+	// nothing.
+	OpcodeJumpIfFalse = 6
+
+	// OpcodeLessThan: if the first parameter is less than the second
+	// parameter, it stores 1 in the position given by the third parameter.
+	// Otherwise, it stores 0.
+	OpcodeLessThan = 7
+
+	// OpcodeEquals: if the first parameter is equal to the second parameter,
+	// it stores 1 in the position given by the third parameter. Otherwise, it
+	// stores 0.
+	OpcodeEquals = 8
 )
 
 const (
@@ -71,6 +91,7 @@ func (comp *Computer) Load(prgm string) {
 	}
 }
 
+// Output is what the computer outputs
 type Output struct {
 	Value int
 	Error error
@@ -120,6 +141,34 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 			vals := comp.values(comp.move(&addr, 3), modes)
 			*vals[2] = *vals[1] * *vals[0]
 
+		case OpcodeJumpIfTrue:
+			vals := comp.values(comp.move(&addr, 2), modes)
+			if *vals[0] != 0 {
+				addr = *vals[1]
+			}
+
+		case OpcodeJumpIfFalse:
+			vals := comp.values(comp.move(&addr, 2), modes)
+			if *vals[0] == 0 {
+				addr = *vals[1]
+			}
+
+		case OpcodeLessThan:
+			vals := comp.values(comp.move(&addr, 3), modes)
+			if *vals[0] < *vals[1] {
+				*vals[2] = 1
+			} else {
+				*vals[2] = 0
+			}
+
+		case OpcodeEquals:
+			vals := comp.values(comp.move(&addr, 3), modes)
+			if *vals[0] == *vals[1] {
+				*vals[2] = 1
+			} else {
+				*vals[2] = 0
+			}
+
 		default:
 			outputs <- Output{Error: fmt.Errorf("%d is an invalid intcode", comp.Memory[0])}
 			return
@@ -136,7 +185,7 @@ func (comp Computer) move(addr *int, num int) []int {
 func (comp Computer) values(params []int, modes [3]int) []*int {
 	vals := make([]*int, 3)
 
-	for i := range vals {
+	for i := range params {
 		switch modes[i] {
 		case ImmediateMode:
 			vals[i] = &params[i]

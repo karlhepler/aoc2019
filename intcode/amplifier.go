@@ -21,9 +21,9 @@ type Amplifier struct {
 // Exec runs the controller with the given input
 func (amp Amplifier) Exec(input int) Output {
 	inputs := make(chan int)
-	defer close(inputs)
 
 	go func() {
+		defer close(inputs)
 		inputs <- amp.PhaseSetting
 		inputs <- input
 	}()

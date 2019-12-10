@@ -34,12 +34,11 @@ func TestComputerLoad(t *testing.T) {
 	}
 }
 
-func TestComputerExec21(t *testing.T) {
+func TestComputerExec(t *testing.T) {
 	tcs := []struct {
 		initialState []int
 		finalState   []int
 	}{
-		{initialState: nil, finalState: nil},
 		{
 			initialState: []int{1, 0, 0, 0, 99},
 			finalState:   []int{2, 0, 0, 0, 99},
@@ -55,6 +54,14 @@ func TestComputerExec21(t *testing.T) {
 		{
 			initialState: []int{1, 1, 1, 4, 99, 5, 6, 0, 99},
 			finalState:   []int{30, 1, 1, 4, 2, 5, 6, 0, 99},
+		},
+		{
+			initialState: []int{1002, 4, 3, 4, 33},
+			finalState:   []int{1002, 4, 3, 4, 99},
+		},
+		{
+			initialState: []int{1101, 100, -1, 4, 0},
+			finalState:   []int{1101, 100, -1, 4, 99},
 		},
 	}
 
@@ -75,8 +82,4 @@ func TestComputerExec21(t *testing.T) {
 
 		close(inputs)
 	}
-}
-
-func TestComputer51(t *testing.T) {
-	//
 }

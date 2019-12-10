@@ -1,6 +1,7 @@
 package intcode
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"strconv"
@@ -31,6 +32,17 @@ const (
 	// OpcodeOutput outputs the value of its only parameter. For example, the
 	// instruction 4,50 would output the value at address 50.
 	OpcodeOutput = 4
+)
+
+const (
+	// PositionMode causes the parameter to be interpreted as a position -
+	// if the parameter is 50, its value is the value stored at address 50 in
+	// memory. Until now, all parameters have been in position mode.
+	PositionMode = 0
+
+	// ImmediateMode causes a parameter to be interpreted as a value - if
+	// the parameter is 50, its value is simply 50.
+	ImmediateMode = 1
 )
 
 // NewComputer returns a pointer to a new Computer instance
@@ -75,12 +87,20 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 	defer close(outputs)
 
 	if comp.Memory == nil {
+		outputs <- Output{Error: errors.New("No program loaded in memory")}
 		return
 	}
 
 	addr := 0
+
 	for {
-		switch comp.Memory[addr] {
+		opcode, modes, err := decode(comp.Memory[addr])
+		if err != nil {
+			outputs <- Output{Error: err}
+			return
+		}
+
+		switch opcode {
 		case OpcodeHalt:
 			return
 
@@ -89,15 +109,16 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 			comp.Memory[params[0]] = <-inputs
 
 		case OpcodeOutput:
-			outputs <- Output{Value: comp.Memory[comp.move(&addr, 1)[0]]}
+			params := comp.move(&addr, 1)
+			outputs <- Output{Value: comp.Memory[params[0]]}
 
 		case OpcodeAdd:
-			params := comp.move(&addr, 3)
-			comp.Memory[params[2]] = comp.Memory[params[1]] + comp.Memory[params[0]]
+			vals := comp.values(comp.move(&addr, 3), modes)
+			*vals[2] = *vals[1] + *vals[0]
 
 		case OpcodeMultiply:
-			params := comp.move(&addr, 3)
-			comp.Memory[params[2]] = comp.Memory[params[1]] * comp.Memory[params[0]]
+			vals := comp.values(comp.move(&addr, 3), modes)
+			*vals[2] = *vals[1] * *vals[0]
 
 		default:
 			outputs <- Output{Error: fmt.Errorf("%d is an invalid intcode", comp.Memory[0])}
@@ -110,4 +131,38 @@ func (comp Computer) move(addr *int, num int) []int {
 	first, last := *addr+1, *addr+1+num
 	*addr = last
 	return comp.Memory[first:last]
+}
+
+func (comp Computer) values(params []int, modes [3]int) []*int {
+	vals := make([]*int, 3)
+
+	for i := range vals {
+		switch modes[i] {
+		case ImmediateMode:
+			vals[i] = &params[i]
+		case PositionMode:
+			vals[i] = &comp.Memory[params[i]]
+		}
+	}
+
+	return vals
+}
+
+func decode(code int) (opcode int, modes [3]int, err error) {
+	codestr := fmt.Sprintf("%05d", code)
+
+	opcode, err = strconv.Atoi(codestr[3:])
+	if err != nil {
+		return
+	}
+
+	if modes[0], err = strconv.Atoi(string(codestr[2])); err != nil {
+		return
+	}
+	if modes[1], err = strconv.Atoi(string(codestr[1])); err != nil {
+		return
+	}
+	modes[2], err = strconv.Atoi(string(codestr[0]))
+
+	return
 }

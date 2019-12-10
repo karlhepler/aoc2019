@@ -35,7 +35,7 @@ func TestExec(t *testing.T) {
 	}
 
 	inputs := make(chan int)
-	outputs := make(chan computer.Output)
+	outputs := make(chan *computer.Output)
 
 	for i, tc := range tcs {
 		comp := computer.NewComputer(tc.prgm)
@@ -43,6 +43,10 @@ func TestExec(t *testing.T) {
 
 		inputs <- tc.input
 		output := <-outputs
+
+		if output == nil {
+			continue
+		}
 
 		if output.Error != nil {
 			t.Fatal(output.Error)

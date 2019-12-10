@@ -11,6 +11,8 @@ type AmplifierChain []Amplifier
 
 func (chain AmplifierChain) Exec(input int) (int, error) {
 	inputs, outputs := make(chan int), make(chan Output)
+	defer close(inputs)
+	defer close(outputs)
 
 	go func() {
 		for _, amp := range chain {
@@ -25,12 +27,9 @@ func (chain AmplifierChain) Exec(input int) (int, error) {
 
 		output = <-outputs
 		if output.Error != nil {
-			break
+			return -1, output.Error
 		}
 	}
-
-	close(inputs)
-	close(outputs)
 
 	return output.Value, output.Error
 }

@@ -14,7 +14,9 @@ type Output struct {
 }
 
 func NewComputer(prgm []int) Computer {
-	return Computer{prgm}
+	return Computer{
+		Program: append(prgm[:0:0], prgm...),
+	}
 }
 
 type Computer struct {

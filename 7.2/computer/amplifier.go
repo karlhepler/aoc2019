@@ -1,5 +1,53 @@
 package computer
 
+func NewAmplifierChain(prgm []int, phases []int) (chain AmplifierChain) {
+	for _, phase := range phases {
+		chain = append(chain, Amplify(NewComputer(prgm), phase))
+	}
+	return
+}
+
+type AmplifierChain []Amplifier
+
+func (chain AmplifierChain) Exec(input int) (int, error) {
+	inputs, outputs := make(chan int), make(chan Output)
+
+	go func() {
+		for _, amp := range chain {
+			amp.Computer.Exec(inputs, outputs)
+		}
+	}()
+
+	var output Output
+	for _, amp := range chain {
+		inputs <- amp.PhaseSetting
+		inputs <- input
+
+		output = <-outputs
+		if output.Error != nil {
+			break
+		}
+		input = output.Value
+	}
+
+	close(inputs)
+	close(outputs)
+
+	return output.Value, output.Error
+}
+
+func Amplify(comp Computer, phase int) Amplifier {
+	return Amplifier{
+		Computer:     comp,
+		PhaseSetting: phase,
+	}
+}
+
+type Amplifier struct {
+	Computer
+	PhaseSetting int
+}
+
 // import (
 // 	"github.com/karlhepler/aoc2019/5.2/computer"
 // )
@@ -49,5 +97,5 @@ package computer
 // }
 
 // func clone(prgm []int) []int {
-// 	return append(prgm[:0:0], prgm...)
+// 	return
 // }

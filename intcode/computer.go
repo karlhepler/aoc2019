@@ -105,12 +105,12 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 			return
 
 		case OpcodeInput:
-			params := comp.move(&addr, 1)
-			comp.Memory[params[0]] = <-inputs
+			vals := comp.values(comp.move(&addr, 1), modes)
+			*vals[0] = <-inputs
 
 		case OpcodeOutput:
-			params := comp.move(&addr, 1)
-			outputs <- Output{Value: comp.Memory[params[0]]}
+			vals := comp.values(comp.move(&addr, 1), modes)
+			outputs <- Output{Value: *vals[0]}
 
 		case OpcodeAdd:
 			vals := comp.values(comp.move(&addr, 3), modes)

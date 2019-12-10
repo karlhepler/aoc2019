@@ -16,10 +16,7 @@ func main() {
 
 	var max float64
 
-	for perms := range quickPerm.GeneratePermutationsInt([]int{5, 6, 7, 8, 9}) {
-		phaseSettings := [5]int{}
-		copy(phaseSettings[:], perms)
-
+	for phaseSettings := range quickPerm.GeneratePermutationsInt([]int{0, 1, 2, 3, 4}) {
 		chain := computer.NewAmplifierChain(input.Program("7.1"), phaseSettings)
 		output, err := chain.Exec(0)
 		if err != nil {

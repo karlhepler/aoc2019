@@ -18,16 +18,15 @@ func (chain AmplifierChain) Exec(input int) (int, error) {
 		}
 	}()
 
-	var output Output
+	output := Output{Value: input}
 	for _, amp := range chain {
 		inputs <- amp.PhaseSetting
-		inputs <- input
+		inputs <- output.Value
 
 		output = <-outputs
 		if output.Error != nil {
 			break
 		}
-		input = output.Value
 	}
 
 	close(inputs)

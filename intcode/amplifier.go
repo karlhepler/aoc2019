@@ -49,6 +49,22 @@ type AmplificationCircuit []Amplifier
 // Exec chains the inputs and outputs of all amplifiers in the circuit,
 // producing a final output.
 func (amps AmplificationCircuit) Exec(input int) (output Output) {
+	output = amps.exec(input)
+	if amps[0].PhaseSetting < 5 {
+		return
+	}
+
+	for i := 0; i < 10; i++ {
+		if output.Error != nil {
+			return
+		}
+		output = amps.exec(output.Value)
+	}
+
+	return
+}
+
+func (amps AmplificationCircuit) exec(input int) (output Output) {
 	for _, amp := range amps {
 		output = amp.Exec(input)
 		if output.Error != nil {
@@ -58,4 +74,11 @@ func (amps AmplificationCircuit) Exec(input int) (output Output) {
 	}
 
 	return output
+}
+
+func sum(nums []int) (ans int) {
+	for _, num := range nums {
+		ans += num
+	}
+	return
 }

@@ -17,13 +17,15 @@ func main() {
 	var max float64
 
 	for phaseSettings := range quickPerm.GeneratePermutationsInt([]int{0, 1, 2, 3, 4}) {
-		chain := computer.NewAmplifierChain(input.Program("7.1"), phaseSettings)
-		output, err := chain.Exec(0)
-		if err != nil {
-			log.Fatal(err)
-		}
+		go func(phaseSettings []int) {
+			chain := computer.NewAmplifierChain(input.Program("7.1"), phaseSettings)
+			output, err := chain.Exec(0)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		max = math.Max(float64(output), max)
+			max = math.Max(float64(output), max)
+		}(phaseSettings)
 	}
 
 	log.Printf("Highest Output Signal: %v", max)

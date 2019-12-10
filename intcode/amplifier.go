@@ -54,7 +54,7 @@ func (amps AmplificationCircuit) Exec(input int) (output Output) {
 		return
 	}
 
-	for i := 0; i < 10; i++ {
+	for i := 0; i < 5; i++ {
 		if output.Error != nil {
 			return
 		}

@@ -52,7 +52,7 @@ func (amps AmplificationCircuit) Exec(input int) (output Output) {
 	running := len(amps)
 	output = Output{Value: input}
 
-	for running > 0 {
+	for running > 1 {
 		for _, amp := range amps {
 			if !looping {
 				amp.Input <- amp.PhaseSetting

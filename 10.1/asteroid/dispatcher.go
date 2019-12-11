@@ -3,9 +3,7 @@ package asteroid
 // NewDispatcher returns a pointer to a newly configured Dispatcher.
 func NewDispatcher(m Map) *Dispatcher {
 	return &Dispatcher{
-		Map:      m,
-		Scouts:   make([]Scout, 0),
-		Messages: make(chan Message),
+		Map: m,
 	}
 }
 
@@ -16,15 +14,17 @@ func NewDispatcher(m Map) *Dispatcher {
 // asteroids.
 type Dispatcher struct {
 	Map
-	Scouts   []Scout
-	Messages chan Message
 }
 
-// DispatchScout dispatches a scout to a given position on the Map and returns
-// a pointer to that Scout.
-func (d *Dispatcher) DispatchScout(pos Vector) *Scout {
-	d.Scouts = append(d.Scouts, NewScout(d.Map.Copy(), pos, d.Messages))
-	return &d.Scouts[len(d.Scouts)-1]
+func (d *Dispatcher) SurveyAndListen() <-chan Message {
+	messages := make(chan Message)
+
+	for _, ast := range d.Map {
+		scout := NewScout(d.Map, ast.Pos, messages)
+		go scout.SearchAndReport()
+	}
+
+	return messages
 }
 
 // Message is sent by the scouts back to the dispatcher via the Messages

@@ -24,19 +24,19 @@ func TestScoutSearch(t *testing.T) {
 	defer close(messages)
 
 	tcs := []struct {
-		scout      asteroid.Scout
+		scout      *asteroid.Scout
 		numVisible int
 	}{
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{1, 0}, messages), 7},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{4, 0}, messages), 7},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{0, 2}, messages), 6},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{1, 2}, messages), 7},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{2, 2}, messages), 7},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{3, 2}, messages), 7},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{4, 2}, messages), 5},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{4, 3}, messages), 7},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{3, 4}, messages), 8},
-		{asteroid.NewScout(astmap.Copy(), asteroid.Vector{4, 4}, messages), 7},
+		{asteroid.NewScout(astmap, asteroid.Vector{1, 0}, messages), 7},
+		{asteroid.NewScout(astmap, asteroid.Vector{4, 0}, messages), 7},
+		{asteroid.NewScout(astmap, asteroid.Vector{0, 2}, messages), 6},
+		{asteroid.NewScout(astmap, asteroid.Vector{1, 2}, messages), 7},
+		{asteroid.NewScout(astmap, asteroid.Vector{2, 2}, messages), 7},
+		{asteroid.NewScout(astmap, asteroid.Vector{3, 2}, messages), 7},
+		{asteroid.NewScout(astmap, asteroid.Vector{4, 2}, messages), 5},
+		{asteroid.NewScout(astmap, asteroid.Vector{4, 3}, messages), 7},
+		{asteroid.NewScout(astmap, asteroid.Vector{3, 4}, messages), 8},
+		{asteroid.NewScout(astmap, asteroid.Vector{4, 4}, messages), 7},
 	}
 
 	for i, tc := range tcs {

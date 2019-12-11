@@ -1,8 +1,8 @@
 package asteroid
 
 // NewScout returns a copy of a new Scout instance
-func NewScout(m Map, origin Vector, messages chan<- Message) Scout {
-	return Scout{
+func NewScout(m Map, origin Vector, messages chan<- Message) *Scout {
+	return &Scout{
 		Map:      m,
 		Origin:   origin,
 		Messages: messages,

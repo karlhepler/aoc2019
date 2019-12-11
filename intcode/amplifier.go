@@ -1,7 +1,5 @@
 package intcode
 
-import "fmt"
-
 // NewAmplifier returns a pointer to a new instance of Amplifier with a new
 // instance of Computer that has loaded its program.
 func NewAmplifier(prgm string, phaseSetting int) *Amplifier {
@@ -51,11 +49,10 @@ func (amps AmplificationCircuit) Exec(input int) (output Output) {
 	}
 
 	looping := false
+	running := len(amps)
 	output = Output{Value: input}
 
-	for {
-		fmt.Printf("[START] %d\n", output.Value)
-
+	for running > 0 {
 		for _, amp := range amps {
 			if !looping {
 				amp.Input <- amp.PhaseSetting
@@ -67,14 +64,15 @@ func (amps AmplificationCircuit) Exec(input int) (output Output) {
 				return
 			}
 
-			fmt.Printf("[RUNNING] %t\n", amp.Controller.Running)
+			if amp.Controller.Running == false {
+				running--
+			}
 		}
 
 		if amps[0].PhaseSetting < 5 {
 			return
 		}
 
-		fmt.Printf("[END] %d\n", output.Value)
 		looping = true
 	}
 

@@ -25,6 +25,15 @@ func BuildMap(lines <-chan string) Map {
 // value is the asteroid itself.
 type Map map[Vector]Asteroid
 
+// Copy returns a copy of the map
+func (a Map) Copy() Map {
+	b := make(Map, len(a))
+	for k, v := range a {
+		b[k] = v
+	}
+	return b
+}
+
 // Asteroid represents an asteroid. So far, it has no properties.
 type Asteroid struct {
 	//

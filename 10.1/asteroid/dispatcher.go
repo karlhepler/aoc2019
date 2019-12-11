@@ -30,5 +30,5 @@ func (d *Dispatcher) DispatchScout(pos Vector) *Scout {
 // Message is sent by the scouts back to the dispatcher via the Messages
 // channel.
 type Message struct {
-	//
+	NumVisibleAsteroids int
 }

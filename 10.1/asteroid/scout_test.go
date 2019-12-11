@@ -8,16 +8,16 @@ import (
 
 func TestScoutSearch(t *testing.T) {
 	astmap := asteroid.Map{
-		asteroid.Vector{1, 0}: asteroid.Asteroid{},
-		asteroid.Vector{4, 0}: asteroid.Asteroid{},
-		asteroid.Vector{0, 2}: asteroid.Asteroid{},
-		asteroid.Vector{1, 2}: asteroid.Asteroid{},
-		asteroid.Vector{2, 2}: asteroid.Asteroid{},
-		asteroid.Vector{3, 2}: asteroid.Asteroid{},
-		asteroid.Vector{4, 2}: asteroid.Asteroid{},
-		asteroid.Vector{4, 3}: asteroid.Asteroid{},
-		asteroid.Vector{3, 4}: asteroid.Asteroid{},
-		asteroid.Vector{4, 4}: asteroid.Asteroid{},
+		asteroid.Asteroid{asteroid.Vector{1, 0}},
+		asteroid.Asteroid{asteroid.Vector{4, 0}},
+		asteroid.Asteroid{asteroid.Vector{0, 2}},
+		asteroid.Asteroid{asteroid.Vector{1, 2}},
+		asteroid.Asteroid{asteroid.Vector{2, 2}},
+		asteroid.Asteroid{asteroid.Vector{3, 2}},
+		asteroid.Asteroid{asteroid.Vector{4, 2}},
+		asteroid.Asteroid{asteroid.Vector{4, 3}},
+		asteroid.Asteroid{asteroid.Vector{3, 4}},
+		asteroid.Asteroid{asteroid.Vector{4, 4}},
 	}
 
 	messages := make(chan asteroid.Message)
@@ -40,9 +40,11 @@ func TestScoutSearch(t *testing.T) {
 	}
 
 	for i, tc := range tcs {
-		(&tc.scout).Search()
-		if numVisible := len(tc.scout.VisibleMap); numVisible != tc.numVisible {
-			t.Errorf("%d. Expected %d; Received %d", i, tc.numVisible, numVisible)
+		go tc.scout.SearchAndReport()
+		msg := <-messages
+
+		if msg.NumVisibleAsteroids != tc.numVisible {
+			t.Errorf("%d. Expected %d; Received %d", i, tc.numVisible, msg.NumVisibleAsteroids)
 		}
 	}
 }

@@ -3,11 +3,9 @@ package asteroid
 // NewScout returns a copy of a new Scout instance
 func NewScout(m Map, origin Vector, messages chan<- Message) Scout {
 	return Scout{
-		Map:          m,
-		VisibleMap:   make(Map),
-		InvisibleMap: make(Map),
-		Origin:       origin,
-		Messages:     messages,
+		Map:      m,
+		Origin:   origin,
+		Messages: messages,
 	}
 }
 
@@ -16,44 +14,39 @@ func NewScout(m Map, origin Vector, messages chan<- Message) Scout {
 // to send a message back to the dispatcher via the Messages channel.
 type Scout struct {
 	Map
-	VisibleMap   Map
-	InvisibleMap Map
-	Origin       Vector
-	Messages     chan<- Message
+	Origin   Vector
+	Messages chan<- Message
 }
 
-// Search searches the map for asteroids, MOVING "visible" asteroids to
-// VisibleMap and "invisible" asteroids to InvisibleMap.
-func (s *Scout) Search() {
-	// Loop until the map is "empty" (except for the origin)
-	for len(s.Map) > 1 {
-		visible := Vector{}
-		foundVisible := false
+// Search searches the map for asteroids, appending "visible" asteroids to
+// VisibleMap. Once this is done, it reports its findings to the dispatcher via
+// the Messages channel.
+func (s Scout) SearchAndReport() {
+	visible := 0
 
-		for check := range s.Map {
-			// Don't check the origin, duh!
-			if check == s.Origin {
-				continue
-			}
+	for _, check := range s.Map {
+		// Don't count the origin!
+		if check.Pos == s.Origin {
+			continue
+		}
 
-			// Grab the asteroid to check against
-			if foundVisible == false {
-				visible = check
-				foundVisible = true
-				continue
-			}
+		// Is anything blocking the scout's view of check?
+		// From s.Origin to check, is there anything in between?
+		// If so, add it to the Visible map.
 
-			// If check "blocks" the view to visible, then add visible to InvisibleMap,
-			// remove visible from Map, and set visible to check.
-			if check.OnSegment([2]Vector{s.Origin, visible}) {
-				s.InvisibleMap[visible] = s.Map[visible]
-				delete(s.Map, visible)
-				visible = check
+		isBlocked := false
+		for _, blocker := range s.Map {
+			if blocker.Pos.OnSegment(s.Origin, check.Pos) {
+				isBlocked = true
+				break
 			}
 		}
 
-		// Add visible to VisibleMap and delete it from Map.
-		s.VisibleMap[visible] = s.Map[visible]
-		delete(s.Map, visible)
+		if !isBlocked {
+			visible++
+		}
 	}
+
+	// Report this to the dispatcher!
+	s.Messages <- Message{visible}
 }

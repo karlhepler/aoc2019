@@ -45,8 +45,7 @@ func (s *Scout) Search() {
 
 			// If check "blocks" the view to visible, then add visible to InvisibleMap,
 			// remove visible from Map, and set visible to check.
-			ab, ac := check.Sub(s.Origin), visible.Sub(s.Origin)
-			if Colinear(ab, ac) && ab.Dot(ac) > 0 && ab.Dot(ac) < ab.Dot(ab) {
+			if check.OnSegment([2]Vector{s.Origin, visible}) {
 				s.InvisibleMap[visible] = s.Map[visible]
 				delete(s.Map, visible)
 				visible = check

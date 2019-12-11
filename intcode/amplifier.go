@@ -50,8 +50,8 @@ func (amps AmplificationCircuit) Exec(input int) (output Output) {
 		amp.Exec()
 	}
 
-	output = Output{Value: input}
 	looping := false
+	output = Output{Value: input}
 
 	for {
 		fmt.Printf("[START] %d\n", output.Value)
@@ -62,14 +62,12 @@ func (amps AmplificationCircuit) Exec(input int) (output Output) {
 			}
 			amp.Input <- output.Value
 
-			next, ok := <-amp.Output
-			if !ok {
-				break
-			}
-			if next.Error != nil {
+			output = <-amp.Output
+			if output.Error != nil {
 				return
 			}
-			output = next
+
+			fmt.Printf("[RUNNING] %t\n", amp.Controller.Running)
 		}
 
 		if amps[0].PhaseSetting < 5 {

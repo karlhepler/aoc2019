@@ -72,7 +72,8 @@ func NewComputer() *Computer {
 
 // Computer is the intcode Computer struct
 type Computer struct {
-	Memory []int
+	Memory  []int
+	Running bool
 }
 
 // Load loads a program into memory
@@ -106,6 +107,7 @@ func (comp *Computer) Exec(inputs <-chan int) <-chan Output {
 
 func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 	defer close(outputs)
+	defer func() { comp.Running = false }()
 
 	if comp.Memory == nil {
 		outputs <- Output{Error: errors.New("No program loaded in memory")}
@@ -113,6 +115,7 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 	}
 
 	addr := 0
+	comp.Running = true
 
 	for {
 		opcode, modes, err := decode(comp.Memory[addr])

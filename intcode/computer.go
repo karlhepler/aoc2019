@@ -52,6 +52,11 @@ const (
 	// it stores 1 in the position given by the third parameter. Otherwise, it
 	// stores 0.
 	OpcodeEquals = 8
+
+	// OpcodeRelativeBaseOffset adjusts the relative base by the value of its
+	// only parameter. The relative base increases (or decreases, if the
+	// value is negative) by the value of the parameter.
+	OpcodeRelativeBaseOffset = 9
 )
 
 const (
@@ -63,23 +68,40 @@ const (
 	// ImmediateMode causes a parameter to be interpreted as a value - if
 	// the parameter is 50, its value is simply 50.
 	ImmediateMode = 1
+
+	// RelativeMode: Parameters in mode 2, relative mode, behave very similarly
+	// to parameters in position mode: the parameter is interpreted as a
+	// position. Like position mode, parameters in relative mode can be read
+	// from or written to.
+	//
+	// The important difference is that relative mode parameters don't count
+	// from address 0. Instead, they count from a value called the relative
+	// base. The relative base starts at 0.
+	//
+	// The address a relative mode parameter refers to is itself plus the
+	// current relative base. When the relative base is 0, relative mode
+	// parameters and position mode parameters with the same value refer to the
+	// same address.
+	RelativeMode = 2
 )
 
 // NewComputer returns a pointer to a new Computer instance
 func NewComputer() *Computer {
-	return &Computer{}
+	return &Computer{
+		Memory: make([]int, 2048),
+	}
 }
 
 // Computer is the intcode Computer struct
 type Computer struct {
-	Memory  []int
-	Running bool
+	Memory       []int
+	Running      bool
+	RelativeBase int
 }
 
 // Load loads a program into memory
 func (comp *Computer) Load(prgm string) {
 	instructions := strings.Split(prgm, ",")
-	comp.Memory = make([]int, len(instructions))
 
 	for i, instruction := range instructions {
 		comp.Memory[i] = func(s string) int {
@@ -172,6 +194,10 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 				*vals[2] = 0
 			}
 
+		case OpcodeRelativeBaseOffset:
+			vals := comp.values(comp.move(&addr, 1), modes)
+			comp.RelativeBase += *vals[0]
+
 		default:
 			outputs <- Output{Error: fmt.Errorf("%d is an invalid intcode", comp.Memory[0])}
 			return
@@ -194,6 +220,8 @@ func (comp Computer) values(params []int, modes [3]int) []*int {
 			vals[i] = &params[i]
 		case PositionMode:
 			vals[i] = &comp.Memory[params[i]]
+		case RelativeMode:
+			vals[i] = &comp.Memory[comp.RelativeBase+params[i]]
 		}
 	}
 

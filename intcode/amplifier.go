@@ -1,12 +1,14 @@
 package intcode
 
+import "fmt"
+
 // NewAmplifier returns a pointer to a new instance of Amplifier with a new
 // instance of Computer that has loaded its program.
-func NewAmplifier(prgm string, phaseSetting int) Amplifier {
+func NewAmplifier(prgm string, phaseSetting int) *Amplifier {
 	comp := NewComputer()
 	comp.Load(prgm)
 
-	return Amplifier{
+	return &Amplifier{
 		PhaseSetting: phaseSetting,
 		Controller:   comp,
 	}
@@ -16,25 +18,20 @@ func NewAmplifier(prgm string, phaseSetting int) Amplifier {
 type Amplifier struct {
 	PhaseSetting int
 	Controller   *Computer
+	Input        chan int
+	Output       <-chan Output
 }
 
 // Exec runs the controller with the given input
-func (amp Amplifier) Exec(input int) Output {
-	inputs := make(chan int)
-
-	go func() {
-		defer close(inputs)
-		inputs <- amp.PhaseSetting
-		inputs <- input
-	}()
-
-	return <-amp.Controller.Exec(inputs)
+func (amp *Amplifier) Exec() {
+	amp.Input = make(chan int)
+	amp.Output = amp.Controller.Exec(amp.Input)
 }
 
 // NewAmplificationCircuit creates a new circuit of amplifiers as long as the
 // number of given phaseSettings.
 func NewAmplificationCircuit(prgm string, phaseSettings ...int) AmplificationCircuit {
-	amps := make([]Amplifier, len(phaseSettings))
+	amps := make([]*Amplifier, len(phaseSettings))
 
 	for i, phaseSetting := range phaseSettings {
 		amps[i] = NewAmplifier(prgm, phaseSetting)
@@ -44,41 +41,44 @@ func NewAmplificationCircuit(prgm string, phaseSettings ...int) AmplificationCir
 }
 
 // AmplificationCircuit is a slice of Amplifier
-type AmplificationCircuit []Amplifier
+type AmplificationCircuit []*Amplifier
 
 // Exec chains the inputs and outputs of all amplifiers in the circuit,
 // producing a final output.
 func (amps AmplificationCircuit) Exec(input int) (output Output) {
-	output = amps.exec(input)
-	if amps[0].PhaseSetting < 5 {
-		return
+	for _, amp := range amps {
+		amp.Exec()
 	}
 
-	for i := 0; i < 5; i++ {
-		if output.Error != nil {
+	output = Output{Value: input}
+	looping := false
+
+	for {
+		fmt.Printf("[START] %d\n", output.Value)
+
+		for _, amp := range amps {
+			if !looping {
+				amp.Input <- amp.PhaseSetting
+			}
+			amp.Input <- output.Value
+
+			next, ok := <-amp.Output
+			if !ok {
+				break
+			}
+			if next.Error != nil {
+				return
+			}
+			output = next
+		}
+
+		if amps[0].PhaseSetting < 5 {
 			return
 		}
-		output = amps.exec(output.Value)
+
+		fmt.Printf("[END] %d\n", output.Value)
+		looping = true
 	}
 
-	return
-}
-
-func (amps AmplificationCircuit) exec(input int) (output Output) {
-	for _, amp := range amps {
-		output = amp.Exec(input)
-		if output.Error != nil {
-			return output
-		}
-		input = output.Value
-	}
-
-	return output
-}
-
-func sum(nums []int) (ans int) {
-	for _, num := range nums {
-		ans += num
-	}
 	return
 }

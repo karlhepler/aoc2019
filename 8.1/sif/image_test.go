@@ -14,15 +14,11 @@ func TestDecode(t *testing.T) {
 		data  string
 		image sif.Image
 	}{
-		{3, 2, "123456789012", sif.Image{Width: 3, Height: 2, Layers: [][][]int{[][]int{[]int{1, 2, 3}, []int{4, 5, 6}}, [][]int{[]int{7, 8, 9}, []int{0, 1, 2}}}}},
+		{3, 2, "123456789012", sif.Image{Width: 3, Height: 2, Layers: [][][]byte{[][]byte{[]byte{'1', '2', '3'}, []byte{'4', '5', '6'}}, [][]byte{[]byte{'7', '8', '9'}, []byte{'0', '1', '2'}}}}},
 	}
 
 	for i, tc := range tcs {
-		image, err := sif.Decode(tc.w, tc.h, tc.data)
-		if err != nil {
-			t.Fatal(err)
-		}
-
+		image := sif.Decode(tc.w, tc.h, tc.data)
 		if !reflect.DeepEqual(image, tc.image) {
 			t.Errorf("%d. Expected %v; Received %v", i, tc.image, image)
 		}
@@ -34,8 +30,8 @@ func TestCheck(t *testing.T) {
 		image sif.Image
 		code  int
 	}{
-		{sif.MustDecode(3, 2, "123456789012"), 1},
-		{sif.MustDecode(3, 2, "120126781002"), 4},
+		{sif.Decode(3, 2, "123456789012"), 1},
+		{sif.Decode(3, 2, "120126781002"), 4},
 	}
 
 	for i, tc := range tcs {

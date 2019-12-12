@@ -1,5 +1,9 @@
 package asteroid
 
+import (
+	"math"
+)
+
 // BuildMap builds a Map from a given channel of lines where each character in
 // the line (sitting on a y coordinate) represents an x coordinate on the map.
 // The character '.' means the point is NOT an asteroid, while the character
@@ -52,6 +56,19 @@ func (m Map) AsteroidsAtClockwiseAngle(angle float64) []Coord {
 	return asts
 }
 
+// Without returns a copy of Map without the given coordinate.
+func (m Map) Without(filter Coord) Map {
+	filtered := make(Map, 0)
+
+	for _, c := range m {
+		if c != filter {
+			filtered = append(filtered, c)
+		}
+	}
+
+	return filtered
+}
+
 // byDistance is meant to be used with sort.Sort to sort the coordinates by their
 // lengths.
 type byDistance []Coord
@@ -60,12 +77,12 @@ func (cs byDistance) Len() int {
 	return len(cs)
 }
 
-func (cs byDistance) Swap(i, j int) {
-	cs[i], cs[j] = cs[j], cs[i]
-}
-
 func (cs byDistance) Less(i, j int) bool {
 	return cs[i].Distance() < cs[j].Distance()
+}
+
+func (cs byDistance) Swap(i, j int) {
+	cs[i], cs[j] = cs[j], cs[i]
 }
 
 // byClockwiseAngle is meant to be used with sort.Sort to sort the coordinates by
@@ -76,10 +93,11 @@ func (cs byClockwiseAngle) Len() int {
 	return len(cs)
 }
 
-func (cs byClockwiseAngle) Swap(i, j int) {
-	cs[i], cs[j] = cs[j], cs[i]
+func (cs byClockwiseAngle) Less(i, j int) bool {
+	iang, jang := cs[i].ClockwiseAngle(), cs[j].ClockwiseAngle()
+	return iang < jang || math.IsNaN(iang) && !math.IsNaN(jang)
 }
 
-func (cs byClockwiseAngle) Less(i, j int) bool {
-	return cs[i].ClockwiseAngle() < cs[j].ClockwiseAngle()
+func (cs byClockwiseAngle) Swap(i, j int) {
+	cs[i], cs[j] = cs[j], cs[i]
 }

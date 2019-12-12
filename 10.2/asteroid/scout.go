@@ -9,11 +9,12 @@ func MonitoringStation(m Map) (station Coord, visible []Coord) {
 	var maxlen int
 
 	for _, ast := range m {
-		viz := Visible(m.Translate(ast))
-		if maxlen < len(viz) {
-			maxlen = len(viz)
+		tm := m.Translate(ast)
+		vis := Visible(tm)
+		if maxlen < len(vis) {
+			maxlen = len(vis)
 			station = ast
-			visible = viz
+			visible = vis
 		}
 	}
 
@@ -24,6 +25,9 @@ func MonitoringStation(m Map) (station Coord, visible []Coord) {
 func Visible(m Map) []Coord {
 	visible := make([]Coord, 0)
 
+	// Remove the origin
+	m = m.Without(Coord{0, 0})
+
 	// Sort the map by clockwise angle
 	sort.Sort(byClockwiseAngle(m))
 
@@ -32,13 +36,19 @@ func Visible(m Map) []Coord {
 		// Get all of the asteroids at the current clockwise angle, sort them
 		// by distance, and choose the first (closest) one.
 		matches := m.AsteroidsAtClockwiseAngle(ast.ClockwiseAngle())
-		if len(matches) == 0 {
-			visible = append(visible, ast)
-			continue
-		}
-
 		sort.Sort(byDistance(matches))
-		visible = append(visible, matches[0])
+
+		// Append if it doesn't already exist
+		exists := false
+		for _, v := range visible {
+			if v == matches[0] {
+				exists = true
+				break
+			}
+		}
+		if !exists {
+			visible = append(visible, matches[0])
+		}
 	}
 
 	return visible

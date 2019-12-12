@@ -7,38 +7,39 @@ import (
 // MonitoringStation returns the map coordinates of the monitoring station and
 // a slice of asteroids that are visible from it.
 func MonitoringStation(m Map) (station Coord, visible []Coord) {
-	res := make(chan data)
+	vres := make(chan VisibleResponse)
 
 	for _, ast := range m {
-		go Visible(ast, m.Translate(ast), res)
+		go Visible(m, ast, vres)
 	}
 
 	i := 0
 	maxlen := 0
-	for d := range res {
-		if maxlen < len(d.visible) {
-			maxlen = len(d.visible)
-			station = d.station
-			visible = d.visible
+	for res := range vres {
+		if maxlen < len(res.Visible) {
+			maxlen = len(res.Visible)
+			station = res.Station
+			visible = res.Visible
 		}
 
 		i++
 		if i == len(m) {
-			close(res)
+			close(vres)
 		}
 	}
 
 	return
 }
 
-type data struct {
-	station Coord
-	visible []Coord
+type VisibleResponse struct {
+	Station Coord
+	Visible []Coord
 }
 
 // Visible returns a slice of coordinates to visible asteroids
-func Visible(station Coord, omap Map, res chan<- data) {
+func Visible(m Map, station Coord, res chan<- VisibleResponse) {
 	visible := make([]Coord, 0)
+	omap := m.Translate(station)
 
 	// Remove the origin
 	omap = omap.Without(Coord{0, 0})
@@ -66,5 +67,5 @@ func Visible(station Coord, omap Map, res chan<- data) {
 		}
 	}
 
-	res <- data{station, visible}
+	res <- VisibleResponse{station, Map(visible).Translate(station.Negative())}
 }

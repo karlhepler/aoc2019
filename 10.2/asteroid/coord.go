@@ -56,3 +56,7 @@ func (c Coord) Quadrant() int {
 		return 0
 	}
 }
+
+func (c Coord) Negative() Coord {
+	return Coord{-c[0], -c[1]}
+}

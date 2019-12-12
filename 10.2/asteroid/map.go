@@ -69,6 +69,16 @@ func (m Map) Without(filter Coord) Map {
 	return filtered
 }
 
+func (m Map) IndexOf(c Coord) int {
+	for i := range m {
+		if m[i] == c {
+			return i
+		}
+	}
+
+	return -1
+}
+
 // byDistance is meant to be used with sort.Sort to sort the coordinates by their
 // lengths.
 type byDistance []Coord

@@ -11,7 +11,7 @@ func BuildMap(lines <-chan string) (m Map) {
 	for line := range lines {
 		for x, b := range line {
 			if b == '#' {
-				m = append(m, Vector{float64(x), float64(y)})
+				m = append(m, Coord{float64(x), float64(y)})
 			}
 		}
 		y++
@@ -21,15 +21,15 @@ func BuildMap(lines <-chan string) (m Map) {
 }
 
 // Map is a map of asteroid coordinates.
-type Map []Vector
+type Map []Coord
 
 // Translate translates all asteroid positions on the map to a new
 // origin and returns the new translated map.
-func (m Map) Translate(origin Vector) Map {
+func (m Map) Translate(origin Coord) Map {
 	tmap := make(Map, len(m))
 
 	for i, ast := range m {
-		tmap[i] = Vector{
+		tmap[i] = Coord{
 			ast[0] - origin[0],
 			ast[1] - origin[1],
 		}
@@ -40,61 +40,46 @@ func (m Map) Translate(origin Vector) Map {
 
 // AsteroidsAtAngle returns a slice of all asteroids that have the
 // given clockwise angle.
-func (m Map) AsteroidsAtClockwiseAngle(angle float64) ([]Vector, error) {
-	asts := make([]Vector, 0)
+func (m Map) AsteroidsAtClockwiseAngle(angle float64) []Coord {
+	asts := make([]Coord, 0)
 
 	for _, ast := range m {
-		astang, err := ast.ClockwiseAngle()
-		if err != nil {
-			return asts, err
-		}
-
-		if astang == angle {
+		if ast.ClockwiseAngle() == angle {
 			asts = append(asts, ast)
 		}
 	}
 
-	return asts, nil
+	return asts
 }
 
-// byLength is meant to be used with sort.Sort to sort the vectors by their
+// byDistance is meant to be used with sort.Sort to sort the coordinates by their
 // lengths.
-type byLength []Vector
+type byDistance []Coord
 
-func (vs byLength) Len() int {
-	return len(vs)
+func (cs byDistance) Len() int {
+	return len(cs)
 }
 
-func (vs byLength) Swap(i, j int) {
-	vs[i], vs[j] = vs[j], vs[i]
+func (cs byDistance) Swap(i, j int) {
+	cs[i], cs[j] = cs[j], cs[i]
 }
 
-func (vs byLength) Less(i, j int) bool {
-	return vs[i].Length() < vs[j].Length()
+func (cs byDistance) Less(i, j int) bool {
+	return cs[i].Distance() < cs[j].Distance()
 }
 
-// byClockwiseAngle is meant to be used with sort.Sort to sort the vectors by
+// byClockwiseAngle is meant to be used with sort.Sort to sort the coordinates by
 // their clockwise angles.
-type byClockwiseAngle []Vector
+type byClockwiseAngle []Coord
 
-func (vs byClockwiseAngle) Len() int {
-	return len(vs)
+func (cs byClockwiseAngle) Len() int {
+	return len(cs)
 }
 
-func (vs byClockwiseAngle) Swap(i, j int) {
-	vs[i], vs[j] = vs[j], vs[i]
+func (cs byClockwiseAngle) Swap(i, j int) {
+	cs[i], cs[j] = cs[j], cs[i]
 }
 
-func (vs byClockwiseAngle) Less(i, j int) bool {
-	ai, err := vs[i].ClockwiseAngle()
-	if err != nil {
-		panic(err)
-	}
-
-	aj, err := vs[j].ClockwiseAngle()
-	if err != nil {
-		panic(err)
-	}
-
-	return ai < aj
+func (cs byClockwiseAngle) Less(i, j int) bool {
+	return cs[i].ClockwiseAngle() < cs[j].ClockwiseAngle()
 }

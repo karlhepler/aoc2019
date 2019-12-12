@@ -96,12 +96,17 @@ func NewComputer() *Computer {
 type Computer struct {
 	Memory       []int
 	Running      bool
+	Halt         chan bool
 	RelativeBase int
 }
 
 // Load loads a program into memory
 func (comp *Computer) Load(prgm string) {
 	instructions := strings.Split(prgm, ",")
+
+	if comp.Memory == nil {
+		comp.Memory = make([]int, len(instructions))
+	}
 
 	for i, instruction := range instructions {
 		comp.Memory[i] = func(s string) int {
@@ -122,6 +127,8 @@ type Output struct {
 
 // Exec executes the program loaded into memory
 func (comp *Computer) Exec(inputs <-chan int) <-chan Output {
+	comp.Running = true
+	comp.Halt = make(chan bool)
 	outputs := make(chan Output)
 	go comp.exec(inputs, outputs)
 	return outputs
@@ -129,15 +136,18 @@ func (comp *Computer) Exec(inputs <-chan int) <-chan Output {
 
 func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 	defer close(outputs)
-	defer func() { comp.Running = false }()
+	defer func() {
+		comp.Running = false
+		comp.Halt <- true
+		close(comp.Halt)
+	}()
 
 	if comp.Memory == nil {
-		outputs <- Output{Error: errors.New("No program loaded in memory")}
+		outputs <- Output{Error: errors.New("MEMORY EMPTY")}
 		return
 	}
 
-	addr := 0
-	comp.Running = true
+	var addr int
 
 	for {
 		opcode, modes, err := decode(comp.Memory[addr])
@@ -199,7 +209,7 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 			comp.RelativeBase += *vals[0]
 
 		default:
-			outputs <- Output{Error: fmt.Errorf("%d is an invalid intcode", comp.Memory[0])}
+			outputs <- Output{Error: fmt.Errorf("INVALID OPCODE: %d", opcode)}
 			return
 		}
 	}

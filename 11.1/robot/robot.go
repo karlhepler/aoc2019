@@ -59,6 +59,7 @@ func (c Coord) String() string {
 func New() *Robot {
 	return &Robot{
 		Direction:     Up,
+		Position:      Coord{0, 0},
 		PaintedPanels: make(map[Coord]Color),
 		Computer:      intcode.NewComputer(),
 	}
@@ -78,6 +79,8 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 	go func() {
 		defer close(input)
 
+		fmt.Printf("%v %v %v\n", rob.Position, rob.Direction, rob.Camera())
+
 		for {
 			input <- int(rob.Camera())
 			color, turn := <-output, <-output
@@ -85,6 +88,8 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 			rob.Paint(Color(color))
 			rob.Turn(Direction(turn))
 			rob.Move()
+
+			fmt.Printf("%v %v %v\n", rob.Position, rob.Direction, rob.Camera())
 		}
 	}()
 
@@ -120,7 +125,7 @@ func (rob *Robot) Move() {
 	case Down:
 		rob.Position[1] += 1
 	case Left:
-		rob.Position[1] -= 1
+		rob.Position[0] -= 1
 	}
 }
 

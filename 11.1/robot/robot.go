@@ -79,8 +79,6 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 	go func() {
 		defer close(input)
 
-		fmt.Printf("%v %v %v\n", rob.Position, rob.Direction, rob.Camera())
-
 		for {
 			input <- int(rob.Camera())
 			color, turn := <-output, <-output
@@ -88,8 +86,6 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 			rob.Paint(Color(color))
 			rob.Turn(Direction(turn))
 			rob.Move()
-
-			fmt.Printf("%v %v %v\n", rob.Position, rob.Direction, rob.Camera())
 		}
 	}()
 
@@ -137,8 +133,7 @@ func (rob *Robot) Camera() Color {
 	color, ok := rob.PaintedPanels[rob.Position]
 	if !ok {
 		color = Black
-	} else if color == Black {
-		fmt.Printf("[COLOR] %v\n", color)
 	}
+
 	return color
 }

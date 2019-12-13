@@ -85,11 +85,6 @@ const (
 	RelativeMode = 2
 )
 
-const (
-	StatusOK = iota
-	StatusError
-)
-
 // NewComputer returns a pointer to a new Computer instance
 func NewComputer() *Computer {
 	return &Computer{
@@ -124,27 +119,19 @@ func (comp *Computer) Load(prgm string) error {
 	return nil
 }
 
-type Output struct {
-	Value int
-	Error error
-}
-
 // Exec executes the program loaded into memory
-func (comp *Computer) Exec(input <-chan int) (<-chan Output, <-chan int) {
-	output, done := make(chan Output), make(chan int)
+func (comp *Computer) Exec(input <-chan int) (<-chan int, <-chan error) {
+	output, done := make(chan int), make(chan error)
 	go comp.exec(input, output, done)
 	return output, done
 }
 
-func (comp *Computer) exec(input <-chan int, output chan<- Output, done chan<- int) {
-	defer func() {
-		close(output)
-		close(done)
-	}()
+func (comp *Computer) exec(input <-chan int, output chan<- int, done chan<- error) {
+	defer close(done)
+	defer close(output)
 
 	if comp.Memory == nil {
-		output <- Output{Error: errors.New("NO MEMORY")}
-		done <- StatusError
+		done <- errors.New("NO MEMORY")
 		return
 	}
 
@@ -153,13 +140,12 @@ func (comp *Computer) exec(input <-chan int, output chan<- Output, done chan<- i
 	for {
 		opcode, modes, err := decode(comp.Memory[addr])
 		if err != nil {
-			output <- Output{Error: err}
+			done <- err
 			return
 		}
 
 		switch opcode {
 		case OpcodeHalt:
-			done <- StatusOK
 			return
 
 		case OpcodeInput:
@@ -168,7 +154,7 @@ func (comp *Computer) exec(input <-chan int, output chan<- Output, done chan<- i
 
 		case OpcodeOutput:
 			vals := comp.values(comp.move(&addr, 1), modes)
-			output <- Output{Value: *vals[0]}
+			output <- *vals[0]
 
 		case OpcodeAdd:
 			vals := comp.values(comp.move(&addr, 3), modes)
@@ -211,8 +197,7 @@ func (comp *Computer) exec(input <-chan int, output chan<- Output, done chan<- i
 			comp.RelativeBase += *vals[0]
 
 		default:
-			output <- Output{Error: fmt.Errorf("INVALID OPCODE: %d", opcode)}
-			done <- StatusError
+			done <- fmt.Errorf("INVALID OPCODE: %d", opcode)
 			return
 		}
 	}

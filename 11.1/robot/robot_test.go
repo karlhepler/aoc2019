@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/karlhepler/aoc2019/11.1/robot"
+	"github.com/karlhepler/aoc2019/input"
 )
 
 func TestRobotTurn(t *testing.T) {
@@ -31,5 +32,18 @@ func TestRobotTurn(t *testing.T) {
 		if rob.Direction != tc.direction {
 			t.Errorf("%d. Expected %v; Received %v\n", i, tc.direction, rob.Direction)
 		}
+	}
+}
+
+func TestZachDay1Part1(t *testing.T) {
+	rob := robot.New()
+	rob.Computer.Load(<-input.Lines("../../input/z11.1"))
+	numPaintedPanels, err := rob.Activate()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if numPaintedPanels != 2160 {
+		t.Errorf("Expected %d; Received %d", 2160, numPaintedPanels)
 	}
 }

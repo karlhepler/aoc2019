@@ -80,32 +80,15 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 
 		for {
 			input <- int(rob.Camera())
+			color, turn := <-output, <-output
 
-			color := <-output
-			if color.Error != nil {
-				err = color.Error
-				return
-			}
-
-			turn := <-output
-			if turn.Error != nil {
-				err = turn.Error
-				return
-			}
-
-			rob.Paint(Color(color.Value))
-			rob.Turn(Direction(turn.Value))
+			rob.Paint(Color(color))
+			rob.Turn(Direction(turn))
 			rob.Move()
-
-			select {
-			case <-done:
-				return
-			default:
-			}
 		}
 	}()
 
-	<-done
+	err = <-done
 
 	return len(rob.PaintedPanels), err
 }

@@ -13,7 +13,7 @@ func main() {
 	start := time.Now()
 
 	dispatcher := asteroid.NewDispatcher(
-		asteroid.BuildMap(input.Lines("10.1")),
+		asteroid.BuildMap(input.Lines("input/10.1")),
 	)
 
 	var most int

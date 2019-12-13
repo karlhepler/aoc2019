@@ -13,7 +13,7 @@ func main() {
 	start := time.Now()
 
 	rob := robot.New()
-	rob.Computer.Load(<-input.Lines("11.1"))
+	rob.Computer.Load(<-input.Lines("input/11.1"))
 	numPaintedPanels, err := rob.Activate()
 	if err != nil {
 		log.Fatal(err)

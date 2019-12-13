@@ -15,7 +15,7 @@ func main() {
 
 	total := 0
 
-	for line := range input.Lines("1.1") {
+	for line := range input.Lines("input/1.1") {
 		val, err := strconv.Atoi(line)
 		if err != nil {
 			log.Fatal(err)

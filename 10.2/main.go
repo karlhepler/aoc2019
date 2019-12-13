@@ -12,7 +12,7 @@ import (
 func main() {
 	start := time.Now()
 
-	m := asteroid.BuildMap(input.Lines("10.1"))
+	m := asteroid.BuildMap(input.Lines("input/10.1"))
 	station, visible := asteroid.MonitoringStation(m)
 
 	vaporized := 0

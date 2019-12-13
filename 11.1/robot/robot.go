@@ -3,21 +3,30 @@ package robot
 import (
 	"errors"
 	"fmt"
+	"io"
 	"math"
 
 	"github.com/karlhepler/aoc2019/intcode"
 )
 
-type Color int
+type Color float64
 
 func (c Color) String() string {
+	b := c.Byte()
+	if b == 0 {
+		return fmt.Sprintf("%d", int(c))
+	}
+	return string(b)
+}
+
+func (c Color) Byte() byte {
 	switch c {
 	case Black:
-		return "□"
+		return 32
 	case White:
-		return "■"
+		return 35
 	default:
-		return fmt.Sprintf("%d", c)
+		return 0
 	}
 }
 
@@ -50,16 +59,15 @@ const (
 	Up    Direction = 1.5
 )
 
-type Coord [2]int
+type Coord [2]float64
 
 func (c Coord) String() string {
-	return fmt.Sprintf("(%d,%d)", c[0], c[1])
+	return fmt.Sprintf("(%d,%d)", int(c[0]), int(c[1]))
 }
 
 func New() *Robot {
 	return &Robot{
 		Direction:     Up,
-		Position:      Coord{0, 0},
 		PaintedPanels: make(map[Coord]Color),
 		Computer:      intcode.NewComputer(),
 	}
@@ -67,9 +75,10 @@ func New() *Robot {
 
 type Robot struct {
 	Direction
-	Position      Coord
-	PaintedPanels map[Coord]Color
-	Computer      *intcode.Computer
+	Position       Coord
+	HullDimensions Coord
+	PaintedPanels  map[Coord]Color
+	Computer       *intcode.Computer
 }
 
 func (rob *Robot) Activate() (numPaintedPanels int, err error) {
@@ -92,6 +101,28 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 	err = <-done
 
 	return len(rob.PaintedPanels), err
+}
+
+func (rob *Robot) Render(w io.Writer) error {
+	for y := 0; y < int(rob.HullDimensions[1]); y++ {
+		// Generate the byte slice to render
+		line := make([]byte, int(rob.HullDimensions[0]+1))
+		for x := 0; x < int(rob.HullDimensions[0]); x++ {
+			line[x] = byte(rob.PaintedPanels[Coord{float64(x), float64(y)}].Byte())
+		}
+		line[int(rob.HullDimensions[0])] = '\n'
+
+		// Render the byte slice
+		numbytes, err := w.Write(line)
+		if err != nil {
+			return err
+		}
+		if numbytes != int(rob.HullDimensions[0]+1) {
+			return fmt.Errorf("Incomplete render: %d/%d bytes", numbytes, int(rob.HullDimensions[0]+1))
+		}
+	}
+
+	return nil
 }
 
 func (rob *Robot) Turn(dir Direction) (err error) {
@@ -123,6 +154,10 @@ func (rob *Robot) Move() {
 	case Left:
 		rob.Position[0] -= 1
 	}
+
+	// Update hull dimensions
+	rob.HullDimensions[0] = math.Max(rob.HullDimensions[0], math.Abs(rob.Position[0]*2))
+	rob.HullDimensions[1] = math.Max(rob.HullDimensions[1], math.Abs(rob.Position[1]+1))
 }
 
 func (rob *Robot) Paint(color Color) {

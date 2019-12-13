@@ -72,23 +72,40 @@ type Robot struct {
 }
 
 func (rob *Robot) Activate() (numPaintedPanels int, err error) {
-	inputs := make(chan int)
-	outputs, halt := rob.Computer.Exec(inputs)
+	input := make(chan int)
+	output, done := rob.Computer.Exec(input)
 
 	go func() {
-		defer close(inputs)
+		defer close(input)
 
-		for rob.Computer.Running {
-			inputs <- int(rob.Camera())
-			color, turn := <-outputs, <-outputs
+		for {
+			input <- int(rob.Camera())
 
-			rob.Paint(Color(color))
-			rob.Turn(Direction(turn))
+			color := <-output
+			if color.Error != nil {
+				err = color.Error
+				return
+			}
+
+			turn := <-output
+			if turn.Error != nil {
+				err = turn.Error
+				return
+			}
+
+			rob.Paint(Color(color.Value))
+			rob.Turn(Direction(turn.Value))
 			rob.Move()
+
+			select {
+			case <-done:
+				return
+			default:
+			}
 		}
 	}()
 
-	err = <-halt
+	<-done
 
 	return len(rob.PaintedPanels), err
 }

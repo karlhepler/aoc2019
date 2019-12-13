@@ -29,7 +29,11 @@ func TestComputerLoad(t *testing.T) {
 		comp := &intcode.Computer{
 			Memory: make([]int, len(tc.exp)),
 		}
-		comp.Load(tc.prgm)
+
+		if err := comp.Load(tc.prgm); err != nil {
+			t.Fatal(err)
+		}
+
 		if !reflect.DeepEqual(tc.exp, comp.Memory) {
 			t.Errorf("%d. Expected %#v; Received %#v", i, tc.exp, comp.Memory)
 		}
@@ -73,17 +77,16 @@ func TestComputerExecMemory(t *testing.T) {
 
 		comp.Memory = tc.initialState
 
-		output := <-comp.Exec(inputs)
-		if output.Error != nil {
-			close(inputs)
-			t.Fatal(output.Error)
+		_, halt := comp.Exec(inputs)
+		err := <-halt
+		close(inputs)
+		if err != nil {
+			t.Fatal(err)
 		}
 
 		if !reflect.DeepEqual(tc.finalState, comp.Memory) {
 			t.Errorf("%d. Expected %#v; Received %#v", i, tc.finalState, comp.Memory)
 		}
-
-		close(inputs)
 	}
 }
 
@@ -123,7 +126,9 @@ func TestComputerOutput(t *testing.T) {
 	for i, tc := range tcs {
 		inputs := make(chan int)
 
-		comp.Load(tc.prgm)
+		if err := comp.Load(tc.prgm); err != nil {
+			t.Fatal(err)
+		}
 
 		if tc.input >= 0 {
 			go func() {
@@ -131,16 +136,16 @@ func TestComputerOutput(t *testing.T) {
 			}()
 		}
 
-		output := <-comp.Exec(inputs)
-		if output.Error != nil {
+		outputs, halt := comp.Exec(inputs)
+
+		select {
+		case output := <-outputs:
+			if output != tc.output {
+				t.Errorf("%d. Expected %#v; Received %#v", i, tc.output, output)
+			}
+		case err := <-halt:
 			close(inputs)
-			t.Fatal(output.Error)
+			t.Fatal(err)
 		}
-
-		if output.Value != tc.output {
-			t.Errorf("%d. Expected %#v; Received %#v", i, tc.output, output.Value)
-		}
-
-		close(inputs)
 	}
 }

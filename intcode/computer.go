@@ -96,16 +96,15 @@ func NewComputer() *Computer {
 type Computer struct {
 	Memory       []int
 	Running      bool
-	Halt         chan bool
 	RelativeBase int
 }
 
 // Load loads a program into memory
-func (comp *Computer) Load(prgm string) {
+func (comp *Computer) Load(prgm string) error {
 	instructions := strings.Split(prgm, ",")
 
-	if comp.Memory == nil {
-		comp.Memory = make([]int, len(instructions))
+	if comp.Memory == nil || len(comp.Memory) < len(instructions) {
+		return fmt.Errorf("NOT ENOUGH MEMORY. NEED >= %v", len(instructions))
 	}
 
 	for i, instruction := range instructions {
@@ -117,33 +116,25 @@ func (comp *Computer) Load(prgm string) {
 			return i
 		}(instruction)
 	}
-}
 
-// Output is what the computer outputs
-type Output struct {
-	Value int
-	Error error
+	return nil
 }
 
 // Exec executes the program loaded into memory
-func (comp *Computer) Exec(inputs <-chan int) <-chan Output {
+func (comp *Computer) Exec(inputs <-chan int) (<-chan int, <-chan error) {
 	comp.Running = true
-	comp.Halt = make(chan bool)
-	outputs := make(chan Output)
-	go comp.exec(inputs, outputs)
-	return outputs
+	outputs, halt := make(chan int), make(chan error)
+	go comp.exec(inputs, outputs, halt)
+	return outputs, halt
 }
 
-func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
+func (comp *Computer) exec(inputs <-chan int, outputs chan<- int, halt chan<- error) {
 	defer close(outputs)
-	defer func() {
-		comp.Running = false
-		comp.Halt <- true
-		close(comp.Halt)
-	}()
+	defer close(halt)
+	defer func() { comp.Running = false }()
 
 	if comp.Memory == nil {
-		outputs <- Output{Error: errors.New("MEMORY EMPTY")}
+		halt <- errors.New("NO MEMORY")
 		return
 	}
 
@@ -152,7 +143,7 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 	for {
 		opcode, modes, err := decode(comp.Memory[addr])
 		if err != nil {
-			outputs <- Output{Error: err}
+			halt <- err
 			return
 		}
 
@@ -166,7 +157,7 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 
 		case OpcodeOutput:
 			vals := comp.values(comp.move(&addr, 1), modes)
-			outputs <- Output{Value: *vals[0]}
+			outputs <- *vals[0]
 
 		case OpcodeAdd:
 			vals := comp.values(comp.move(&addr, 3), modes)
@@ -209,7 +200,7 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- Output) {
 			comp.RelativeBase += *vals[0]
 
 		default:
-			outputs <- Output{Error: fmt.Errorf("INVALID OPCODE: %d", opcode)}
+			halt <- fmt.Errorf("INVALID OPCODE: %d", opcode)
 			return
 		}
 	}

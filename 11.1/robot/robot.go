@@ -2,11 +2,24 @@ package robot
 
 import (
 	"errors"
+	"fmt"
+	"math"
 
 	"github.com/karlhepler/aoc2019/intcode"
 )
 
 type Color int
+
+func (c Color) String() string {
+	switch c {
+	case Black:
+		return "□"
+	case White:
+		return "■"
+	default:
+		return fmt.Sprintf("%d", c)
+	}
+}
 
 const (
 	Black Color = 0
@@ -15,14 +28,33 @@ const (
 
 type Direction float64
 
+func (d Direction) String() string {
+	switch d {
+	case Left:
+		return "←"
+	case Down:
+		return "↓"
+	case Right:
+		return "→"
+	case Up:
+		return "↑"
+	default:
+		return fmt.Sprintf("%f", d)
+	}
+}
+
 const (
 	Left  Direction = 0
+	Down  Direction = 0.5
 	Right Direction = 1
-	Up    Direction = 2
-	Down  Direction = 3
+	Up    Direction = 1.5
 )
 
 type Coord [2]int
+
+func (c Coord) String() string {
+	return fmt.Sprintf("(%d,%d)", c[0], c[1])
+}
 
 func New() *Robot {
 	return &Robot{
@@ -41,7 +73,7 @@ type Robot struct {
 
 func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 	inputs := make(chan int)
-	outputs := rob.Computer.Exec(inputs)
+	outputs, halt := rob.Computer.Exec(inputs)
 
 	go func() {
 		defer close(inputs)
@@ -49,54 +81,32 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 		for rob.Computer.Running {
 			inputs <- int(rob.Camera())
 
-			color := <-outputs
-			if err = color.Error; err != nil {
-				return
-			}
-
-			turn := <-outputs
-			if err = turn.Error; err != nil {
-				return
-			}
-
-			rob.Paint(Color(color.Value))
-			if err = rob.Turn(Direction(turn.Value)); err != nil {
-				return
-			}
+			color, turn := <-outputs, <-outputs
+			rob.Paint(Color(color))
+			rob.Turn(Direction(turn))
 
 			rob.Move()
 		}
 	}()
 
-	<-rob.Computer.Halt
+	err = <-halt
 
 	return len(rob.PaintedPanels), err
 }
 
 func (rob *Robot) Turn(dir Direction) (err error) {
-	switch {
-	// Left
-	case dir == Left && rob.Direction == Left:
-		rob.Direction = Down
-	case dir == Left && rob.Direction == Down:
-		rob.Direction = Right
-	case dir == Left && rob.Direction == Right:
-		rob.Direction = Up
-	case dir == Left && rob.Direction == Up:
-		rob.Direction = Left
-
-	// Right
-	case dir == Right && rob.Direction == Left:
-		rob.Direction = Up
-	case dir == Right && rob.Direction == Up:
-		rob.Direction = Right
-	case dir == Right && rob.Direction == Right:
-		rob.Direction = Down
-	case dir == Right && rob.Direction == Down:
-		rob.Direction = Left
-
+	switch dir {
+	case Left:
+		rob.Direction = Direction(math.Mod(float64(rob.Direction)+0.5, 2))
+	case Right:
+		rob.Direction = Direction(math.Mod(float64(rob.Direction)-0.5, 2))
 	default:
 		err = errors.New("Robot can only turn Left or Right")
+	}
+
+	// Fix 360deg right turn
+	if rob.Direction == -0.5 {
+		rob.Direction = 1.5
 	}
 
 	return
@@ -123,6 +133,8 @@ func (rob *Robot) Camera() Color {
 	color, ok := rob.PaintedPanels[rob.Position]
 	if !ok {
 		color = Black
+	} else if color == Black {
+		fmt.Printf("[COLOR] %v\n", color)
 	}
 	return color
 }

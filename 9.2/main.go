@@ -16,15 +16,16 @@ func main() {
 	comp.Load(<-input.Lines("9.1"))
 
 	inputs := make(chan int)
-	outputs := comp.Exec(inputs)
+	outputs, halt := comp.Exec(inputs)
 
 	inputs <- 2
-	output := <-outputs
-	if output.Error != nil {
-		log.Fatal(output.Error)
-	}
 
-	fmt.Printf("BOOST Keycode: %d\n", output.Value)
+	select {
+	case output := <-outputs:
+		fmt.Printf("BOOST Keycode: %d\n", output)
+	case err := <-halt:
+		log.Fatal(err)
+	}
 
 	fmt.Printf("Time: %v\n", time.Since(start))
 }

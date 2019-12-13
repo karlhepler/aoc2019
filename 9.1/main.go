@@ -13,18 +13,21 @@ func main() {
 	start := time.Now()
 
 	comp := intcode.NewComputer()
-	comp.Load(<-input.Lines("9.1"))
-
-	inputs := make(chan int)
-	outputs := comp.Exec(inputs)
-
-	inputs <- 1
-	output := <-outputs
-	if output.Error != nil {
-		log.Fatal(output.Error)
+	if err := comp.Load(<-input.Lines("9.1")); err != nil {
+		log.Fatal(err)
 	}
 
-	fmt.Printf("BOOST Keycode: %d\n", output.Value)
+	inputs := make(chan int)
+	outputs, halt := comp.Exec(inputs)
+
+	inputs <- 1
+
+	select {
+	case output := <-outputs:
+		fmt.Printf("BOOST Keycode: %d\n", output)
+	case err := <-halt:
+		log.Fatal(err)
+	}
 
 	fmt.Printf("Time: %v\n", time.Since(start))
 }

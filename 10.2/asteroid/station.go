@@ -7,7 +7,7 @@ import (
 // MonitoringStation returns the map coordinates of the monitoring station and
 // a slice of asteroids that are visible from it.
 func MonitoringStation(m Map) (station Coord, visible []Coord) {
-	vres := make(chan VisibleResponse)
+	vres := make(chan VisibleResponse, len(m))
 
 	for _, ast := range m {
 		go Visible(m, ast, vres)
@@ -22,8 +22,7 @@ func MonitoringStation(m Map) (station Coord, visible []Coord) {
 			visible = res.Visible
 		}
 
-		i++
-		if i == len(m) {
+		if i++; i == len(m) {
 			close(vres)
 		}
 	}

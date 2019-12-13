@@ -129,8 +129,8 @@ func (comp *Computer) Exec(inputs <-chan int) (<-chan int, <-chan error) {
 }
 
 func (comp *Computer) exec(inputs <-chan int, outputs chan<- int, halt chan<- error) {
-	defer close(outputs)
 	defer close(halt)
+	defer close(outputs)
 	defer func() { comp.Running = false }()
 
 	if comp.Memory == nil {

@@ -20,12 +20,12 @@ func main() {
 		go func(phaseSettings []int) {
 			circuit := intcode.NewAmplificationCircuit(prgm, phaseSettings...)
 
-			output := circuit.Exec(0)
-			if output.Error != nil {
-				log.Fatal(output.Error)
+			output, err := circuit.Exec(0)
+			if err != nil {
+				log.Fatal(err)
 			}
 
-			max = maxint(output.Value, max)
+			max = maxint(output, max)
 		}(phaseSettings)
 	}
 

@@ -22,13 +22,13 @@ func TestAmplificationCircuit(t *testing.T) {
 
 	for i, tc := range tcs {
 		circuit := intcode.NewAmplificationCircuit(tc.prgm, tc.phaseSettings...)
-		output := circuit.Exec(tc.input)
-		if output.Error != nil {
-			t.Fatalf("%d. %s", i, output.Error)
+		output, err := circuit.Exec(tc.input)
+		if err != nil {
+			t.Fatalf("%d. %s", i, err)
 		}
 
-		if output.Value != tc.output {
-			t.Errorf("%d. Expected %d; Received %d", i, tc.output, output.Value)
+		if output != tc.output {
+			t.Errorf("%d. Expected %d; Received %d", i, tc.output, output)
 		}
 	}
 }

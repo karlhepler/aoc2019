@@ -1,6 +1,7 @@
 package intcode_test
 
 import (
+	"log"
 	"testing"
 
 	"github.com/karlhepler/aoc2019/input"
@@ -156,21 +157,23 @@ func TestDay5Part1(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var code int
-	inputs := make(chan int)
-	codes, halt := comp.Exec(inputs)
+	input := make(chan int)
+	output, done := comp.Exec(input)
 
+	var code int
 	go func() {
-		defer close(inputs)
-		inputs <- 1
-		for code = range codes {
-			//
+		defer close(input)
+		input <- 1
+
+		for out := range output {
+			if out.Error != nil {
+				t.Fatal(out.Error)
+			}
+			code = out.Value
 		}
 	}()
 
-	if err := <-halt; err != nil {
-		t.Fatal(err)
-	}
+	log.Println(<-done)
 
 	if code != 5074395 {
 		t.Errorf("Expected %d; Received %d\n", 5074395, code)

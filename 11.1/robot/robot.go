@@ -80,11 +80,10 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 
 		for rob.Computer.Running {
 			inputs <- int(rob.Camera())
-
 			color, turn := <-outputs, <-outputs
+
 			rob.Paint(Color(color))
 			rob.Turn(Direction(turn))
-
 			rob.Move()
 		}
 	}()

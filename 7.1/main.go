@@ -3,33 +3,40 @@ package main
 import (
 	"fmt"
 	"log"
-	"math"
 	"time"
 
 	quickPerm "github.com/Ramshackle-Jamathon/go-quickPerm"
-	"github.com/karlhepler/aoc2019/5.1/input"
-	"github.com/karlhepler/aoc2019/7.1/computer"
+	"github.com/karlhepler/aoc2019/input"
+	"github.com/karlhepler/aoc2019/intcode"
 )
 
 func main() {
 	start := time.Now()
 
-	var max float64
+	var max int
+	prgm := <-input.Lines("7.1")
 
-	for perms := range quickPerm.GeneratePermutationsInt([]int{0, 1, 2, 3, 4}) {
-		phaseSettings := [5]int{}
-		copy(phaseSettings[:], perms)
+	for phaseSettings := range quickPerm.GeneratePermutationsInt([]int{0, 1, 2, 3, 4}) {
+		go func(phaseSettings []int) {
+			circuit := intcode.NewAmplificationCircuit(prgm, phaseSettings...)
 
-		chain := computer.NewAmplifierChain(input.Program("7.1"), phaseSettings)
-		output, err := chain.Exec(0)
-		if err != nil {
-			log.Fatal(err)
-		}
+			output, err := circuit.Exec(0)
+			if err != nil {
+				log.Fatal(err)
+			}
 
-		max = math.Max(float64(output), max)
+			max = maxint(output, max)
+		}(phaseSettings)
 	}
 
-	log.Printf("Highest Output Signal: %v", max)
+	log.Printf("Highest Output Signal: %d", max)
 
 	fmt.Printf("Time: %v\n", time.Since(start))
+}
+
+func maxint(a, b int) int {
+	if a < b {
+		return b
+	}
+	return a
 }

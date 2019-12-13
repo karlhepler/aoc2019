@@ -5,19 +5,29 @@ import (
 	"log"
 	"time"
 
-	"github.com/karlhepler/aoc2019/5.1/input"
-	"github.com/karlhepler/aoc2019/5.2/computer"
+	"github.com/karlhepler/aoc2019/input"
+	"github.com/karlhepler/aoc2019/intcode"
 )
 
 func main() {
 	start := time.Now()
 
-	code, err := computer.Exec(input.Program(), 5)
-	if err != nil {
+	comp := intcode.NewComputer()
+	if err := comp.Load(<-input.Lines("5.1")); err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("Diagnostic Code: %d", code)
+	inputs := make(chan int)
+	codes, halt := comp.Exec(inputs)
+
+	inputs <- 5
+
+	select {
+	case code := <-codes:
+		log.Printf("Diagnostic Code: %d", code)
+	case err := <-halt:
+		log.Fatal(err)
+	}
 
 	fmt.Printf("Time: %v\n", time.Since(start))
 }

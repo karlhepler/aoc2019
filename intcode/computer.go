@@ -97,6 +97,7 @@ type Computer struct {
 	Memory       []int
 	Running      bool
 	RelativeBase int
+	DebugMode    bool
 }
 
 // Load loads a program into memory
@@ -149,37 +150,46 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- int, halt chan<- er
 
 		switch opcode {
 		case OpcodeHalt:
+			fmt.Println("[HALT]")
+			halt <- nil
 			return
 
 		case OpcodeInput:
+			fmt.Println("[INPUT]")
 			vals := comp.values(comp.move(&addr, 1), modes)
 			*vals[0] = <-inputs
 
 		case OpcodeOutput:
+			fmt.Println("[OUTPUT]")
 			vals := comp.values(comp.move(&addr, 1), modes)
 			outputs <- *vals[0]
 
 		case OpcodeAdd:
+			fmt.Println("[ADD]")
 			vals := comp.values(comp.move(&addr, 3), modes)
 			*vals[2] = *vals[1] + *vals[0]
 
 		case OpcodeMultiply:
+			fmt.Println("[MULTIPLY]")
 			vals := comp.values(comp.move(&addr, 3), modes)
 			*vals[2] = *vals[1] * *vals[0]
 
 		case OpcodeJumpIfTrue:
+			fmt.Println("[JUMP IF TRUE]")
 			vals := comp.values(comp.move(&addr, 2), modes)
 			if *vals[0] != 0 {
 				addr = *vals[1]
 			}
 
 		case OpcodeJumpIfFalse:
+			fmt.Println("[JUMP IF FALSE]")
 			vals := comp.values(comp.move(&addr, 2), modes)
 			if *vals[0] == 0 {
 				addr = *vals[1]
 			}
 
 		case OpcodeLessThan:
+			fmt.Println("[LESS THAN]")
 			vals := comp.values(comp.move(&addr, 3), modes)
 			if *vals[0] < *vals[1] {
 				*vals[2] = 1
@@ -188,6 +198,7 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- int, halt chan<- er
 			}
 
 		case OpcodeEquals:
+			fmt.Println("[EQUALS]")
 			vals := comp.values(comp.move(&addr, 3), modes)
 			if *vals[0] == *vals[1] {
 				*vals[2] = 1
@@ -196,10 +207,12 @@ func (comp *Computer) exec(inputs <-chan int, outputs chan<- int, halt chan<- er
 			}
 
 		case OpcodeRelativeBaseOffset:
+			fmt.Println("[RELATIVE BASE OFFSET]")
 			vals := comp.values(comp.move(&addr, 1), modes)
 			comp.RelativeBase += *vals[0]
 
 		default:
+			fmt.Println("[INVALID OPCODE]")
 			halt <- fmt.Errorf("INVALID OPCODE: %d", opcode)
 			return
 		}

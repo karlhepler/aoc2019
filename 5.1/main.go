@@ -5,15 +5,31 @@ import (
 	"log"
 	"time"
 
-	"github.com/karlhepler/aoc2019/5.1/computer"
-	"github.com/karlhepler/aoc2019/5.1/input"
+	"github.com/karlhepler/aoc2019/input"
+	"github.com/karlhepler/aoc2019/intcode"
 )
 
 func main() {
 	start := time.Now()
 
-	code, err := computer.Exec(input.Program("5.1"), 1)
-	if err != nil {
+	comp := intcode.NewComputer()
+	if err := comp.Load(<-input.Lines("5.1")); err != nil {
+		log.Fatal(err)
+	}
+
+	var code int
+	inputs := make(chan int)
+	codes, halt := comp.Exec(inputs)
+
+	go func() {
+		defer close(inputs)
+		inputs <- 1
+		for code = range codes {
+			//
+		}
+	}()
+
+	if err := <-halt; err != nil {
 		log.Fatal(err)
 	}
 

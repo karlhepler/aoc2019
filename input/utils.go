@@ -17,8 +17,13 @@ func init() {
 }
 
 // Lines sends lines of the given filename to the channel
-func Lines(filename string) <-chan string {
-	file, err := os.Open(cwd + "/input/" + filename)
+func Lines(filename string, test ...bool) <-chan string {
+	dir := "/input/"
+	if len(test) > 0 && test[0] == true {
+		dir = "/../input/"
+	}
+
+	file, err := os.Open(cwd + dir + filename)
 	if err != nil {
 		log.Fatal(err)
 	}

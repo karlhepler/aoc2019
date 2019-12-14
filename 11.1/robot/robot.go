@@ -9,12 +9,12 @@ import (
 	"github.com/karlhepler/aoc2019/intcode"
 )
 
-type Color float64
+type Color int
 
 func (c Color) String() string {
 	b := c.Byte()
 	if b == 0 {
-		return fmt.Sprintf("%d", int(c))
+		return fmt.Sprintf("%d", c)
 	}
 	return string(b)
 }
@@ -59,10 +59,10 @@ const (
 	Up    Direction = 1.5
 )
 
-type Coord [2]float64
+type Coord [2]int
 
 func (c Coord) String() string {
-	return fmt.Sprintf("(%d,%d)", int(c[0]), int(c[1]))
+	return fmt.Sprintf("(%d,%d)", c[0], c[1])
 }
 
 func New() *Robot {
@@ -83,42 +83,41 @@ type Robot struct {
 
 func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 	input := make(chan int)
+	defer close(input)
+
 	output, done := rob.Computer.Exec(input)
 
-	go func() {
-		defer close(input)
-
-		for {
-			input <- int(rob.Camera())
+	for {
+		select {
+		case input <- int(rob.Camera()):
 			color, turn := <-output, <-output
 
 			rob.Paint(Color(color))
 			rob.Turn(Direction(turn))
 			rob.Move()
+		case err = <-done:
+			return len(rob.PaintedPanels), err
+		default:
 		}
-	}()
-
-	err = <-done
-
-	return len(rob.PaintedPanels), err
+	}
 }
 
 func (rob *Robot) Render(w io.Writer) error {
-	for y := 0; y < int(rob.HullDimensions[1]); y++ {
+	for y := 0; y < rob.HullDimensions[1]; y++ {
 		// Generate the byte slice to render
-		line := make([]byte, int(rob.HullDimensions[0]+1))
-		for x := 0; x < int(rob.HullDimensions[0]); x++ {
-			line[x] = byte(rob.PaintedPanels[Coord{float64(x), float64(y)}].Byte())
+		line := make([]byte, rob.HullDimensions[0]+1)
+		for x := 0; x < rob.HullDimensions[0]; x++ {
+			line[x] = byte(rob.PaintedPanels[Coord{x, y}].Byte())
 		}
-		line[int(rob.HullDimensions[0])] = '\n'
+		line[rob.HullDimensions[0]] = '\n'
 
 		// Render the byte slice
 		numbytes, err := w.Write(line)
 		if err != nil {
 			return err
 		}
-		if numbytes != int(rob.HullDimensions[0]+1) {
-			return fmt.Errorf("Incomplete render: %d/%d bytes", numbytes, int(rob.HullDimensions[0]+1))
+		if numbytes != rob.HullDimensions[0]+1 {
+			return fmt.Errorf("Incomplete render: %d/%d bytes", numbytes, rob.HullDimensions[0]+1)
 		}
 	}
 
@@ -156,8 +155,8 @@ func (rob *Robot) Move() {
 	}
 
 	// Update hull dimensions
-	rob.HullDimensions[0] = math.Max(rob.HullDimensions[0], math.Abs(rob.Position[0]*2))
-	rob.HullDimensions[1] = math.Max(rob.HullDimensions[1], math.Abs(rob.Position[1]+1))
+	rob.HullDimensions[0] = max(rob.HullDimensions[0], abs(rob.Position[0]*2))
+	rob.HullDimensions[1] = max(rob.HullDimensions[1], abs(rob.Position[1]+1))
 }
 
 func (rob *Robot) Paint(color Color) {
@@ -171,4 +170,18 @@ func (rob *Robot) Camera() Color {
 	}
 
 	return color
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
+}
+
+func abs(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
 }

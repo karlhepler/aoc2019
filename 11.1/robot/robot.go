@@ -1,7 +1,6 @@
 package robot
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"log"
@@ -104,16 +103,20 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 	for {
 		select {
 		case input <- int(rob.Camera()):
-			color, turn := <-output, <-output
-
-			rob.Paint(Color(color))
-			rob.Turn(Direction(turn))
+			rob.Paint(Color(<-output))
+			if err = rob.Turn(Direction(<-output)); err != nil {
+				return
+			}
 			rob.Move()
+
 		case err = <-done:
 			return len(rob.PaintedPanels), err
+
 		default:
-			time.Sleep(200 * time.Millisecond)
-			rob.Render(log.Writer())
+			time.Sleep(100 * time.Millisecond)
+			if err = rob.Render(log.Writer()); err != nil {
+				return
+			}
 		}
 	}
 }
@@ -129,9 +132,9 @@ func (rob *Robot) Render(w io.Writer) error {
 		for x := 0; x < rob.HullDimensions[0]; x++ {
 			pos := Coord{x, y}
 			if pos == rob.Position {
-				line[x] = byte(rob.Direction.Byte())
+				line[x] = rob.Direction.Byte()
 			} else {
-				line[x] = byte(rob.PaintedPanels[Coord{x, y}].Byte())
+				line[x] = rob.PaintedPanels[Coord{x, y}].Byte()
 			}
 		}
 		line[rob.HullDimensions[0]] = '\n'
@@ -142,7 +145,7 @@ func (rob *Robot) Render(w io.Writer) error {
 			return err
 		}
 		if numbytes != rob.HullDimensions[0]+1 {
-			return fmt.Errorf("Incomplete render: %d/%d bytes", numbytes, rob.HullDimensions[0]+1)
+			return fmt.Errorf("incomplete render: %d/%d bytes", numbytes, rob.HullDimensions[0]+1)
 		}
 	}
 
@@ -156,7 +159,7 @@ func (rob *Robot) Turn(dir Direction) (err error) {
 	case Right:
 		rob.Direction = Direction(math.Mod(float64(rob.Direction)-0.5, 2))
 	default:
-		err = errors.New("Robot can only turn Left or Right")
+		err = fmt.Errorf("cannot turn %v", dir)
 	}
 
 	// Fix 360deg right turn
@@ -170,13 +173,13 @@ func (rob *Robot) Turn(dir Direction) (err error) {
 func (rob *Robot) Move() {
 	switch rob.Direction {
 	case Up:
-		rob.Position[1] -= 1
+		rob.Position[1]--
 	case Right:
-		rob.Position[0] += 1
+		rob.Position[0]++
 	case Down:
-		rob.Position[1] += 1
+		rob.Position[1]++
 	case Left:
-		rob.Position[0] -= 1
+		rob.Position[0]--
 	}
 
 	// Update hull dimensions

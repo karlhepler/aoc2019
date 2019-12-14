@@ -119,7 +119,9 @@ func (comp *Computer) Load(prgm string) error {
 	return nil
 }
 
-// Exec executes the program loaded into memory
+// Exec executes the program loaded into memory. It receives inputs on
+// the given input channel and returns an output channel and a done
+// channel, through which errors are passed.
 func (comp *Computer) Exec(input <-chan int) (<-chan int, <-chan error) {
 	output, done := make(chan int), make(chan error)
 	go comp.exec(input, output, done)

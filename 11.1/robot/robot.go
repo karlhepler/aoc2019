@@ -4,7 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"math"
+	"os"
+	"os/exec"
+	"time"
 
 	"github.com/karlhepler/aoc2019/intcode"
 )
@@ -22,9 +26,9 @@ func (c Color) String() string {
 func (c Color) Byte() byte {
 	switch c {
 	case Black:
-		return 32
+		return ' '
 	case White:
-		return 35
+		return '#'
 	default:
 		return 0
 	}
@@ -37,19 +41,27 @@ const (
 
 type Direction float64
 
-func (d Direction) String() string {
+func (d Direction) Byte() byte {
 	switch d {
 	case Left:
-		return "←"
+		return '<'
 	case Down:
-		return "↓"
+		return 'v'
 	case Right:
-		return "→"
+		return '>'
 	case Up:
-		return "↑"
+		return '^'
 	default:
+		return 0
+	}
+}
+
+func (d Direction) String() string {
+	b := d.Byte()
+	if b == 0 {
 		return fmt.Sprintf("%f", d)
 	}
+	return string(b)
 }
 
 const (
@@ -87,6 +99,8 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 
 	output, done := rob.Computer.Exec(input)
 
+	rob.Render(log.Writer())
+
 	for {
 		select {
 		case input <- int(rob.Camera()):
@@ -98,16 +112,27 @@ func (rob *Robot) Activate() (numPaintedPanels int, err error) {
 		case err = <-done:
 			return len(rob.PaintedPanels), err
 		default:
+			time.Sleep(200 * time.Millisecond)
+			rob.Render(log.Writer())
 		}
 	}
 }
 
 func (rob *Robot) Render(w io.Writer) error {
+	clear := exec.Command("clear")
+	clear.Stdout = os.Stdout
+	clear.Run()
+
 	for y := 0; y < rob.HullDimensions[1]; y++ {
 		// Generate the byte slice to render
 		line := make([]byte, rob.HullDimensions[0]+1)
 		for x := 0; x < rob.HullDimensions[0]; x++ {
-			line[x] = byte(rob.PaintedPanels[Coord{x, y}].Byte())
+			pos := Coord{x, y}
+			if pos == rob.Position {
+				line[x] = byte(rob.Direction.Byte())
+			} else {
+				line[x] = byte(rob.PaintedPanels[Coord{x, y}].Byte())
+			}
 		}
 		line[rob.HullDimensions[0]] = '\n'
 

@@ -98,6 +98,11 @@ type Computer struct {
 	RelativeBase int
 }
 
+// UpgradeMemory sets the memory to a given size
+func (comp *Computer) UpgradeMemory(size int) {
+	comp.Memory = make([]int, size)
+}
+
 // Load loads a program into memory
 func (comp *Computer) Load(prgm string) error {
 	instructions := strings.Split(prgm, ",")

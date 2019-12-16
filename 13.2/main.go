@@ -10,9 +10,16 @@ import (
 
 func main() {
 	// Power on the arcade and defer power off
-	defer arcade.PowerOn()
+	fmt.Println("He flips the power switch on...")
+	powerOff, err := arcade.PowerOn()
+	if err != nil {
+		fmt.Printf("[ GAME OVER ]\nERROR: %s\n", err)
+		os.Exit(1)
+	}
+	defer powerOff()
 
 	// Load the game
+	fmt.Println("He inserts his brand new Breakout! game cartridge...")
 	breakout, err := arcade.LoadGame(<-input.Lines("input/13.1"))
 	if err != nil {
 		fmt.Printf("[ GAME OVER ]\nERROR: %s\n", err)
@@ -20,13 +27,9 @@ func main() {
 	}
 
 	// Gotta pay to play
+	fmt.Println("He inserts precisely π quarters...")
 	breakout.InsertQuarters()
 
 	// Play the game
-	if err := breakout.Play(); err != nil {
-		fmt.Printf("[ GAME OVER ]\nERROR: %s\n", err)
-		os.Exit(1)
-	}
-
-	fmt.Println("[ GAME OVER ]")
+	breakout.Play()
 }

@@ -21,23 +21,36 @@ var ui UserInterface
 var term *terminal.Terminal
 var computer *intcode.Computer
 
+func init() {
+	ui = UserInterface{os.Stdin, os.Stdout}
+}
+
 func PowerOn() (func() error, error) {
+	ui.Println("[ POWER ON ]")
+
 	reset, err := terminator.RawMode()
 	if err != nil {
 		return reset, err
 	}
 
-	ui = UserInterface{os.Stdin, os.Stdout}
 	term = terminal.NewTerminal(ui, "")
 	computer = intcode.NewComputer()
+
+	ui.Println("[ READY ]")
 
 	return reset, nil
 }
 
 func LoadGame(prgm string) (*Game, error) {
+	ui.Println("[ LOAD GAME ]")
+
 	game := &Game{make(map[Coord]Tile)}
 	computer.UpgradeMemory(len(prgm))
-	return game, computer.Load(prgm)
+	err := computer.Load(prgm)
+
+	ui.Println("[ READY ]")
+
+	return game, err
 }
 
 type Game struct {
@@ -50,7 +63,7 @@ func (game *Game) InsertQuarters() {
 	computer.Memory[0] = 2
 }
 
-func (game *Game) Play() error {
+func (game *Game) Play() {
 	input := make(chan int)
 	defer close(input)
 
@@ -59,16 +72,22 @@ func (game *Game) Play() error {
 	for {
 		select {
 		case err := <-done:
-			return err
+			if err != nil {
+				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+			}
+
+			ui.Println("[ GAME OVER ]")
+			return
 		default:
 			if err := game.Update(output, input); err != nil {
-				return err
+				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
 			}
 			if err := game.Render(); err != nil {
-				return err
+				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
 			}
 		}
 	}
+
 }
 
 func (game Game) NumTiles(tile Tile) (num int) {
@@ -172,4 +191,13 @@ func (ui UserInterface) Read(p []byte) (n int, err error) {
 
 func (ui UserInterface) Write(p []byte) (n int, err error) {
 	return ui.Screen.Write(p)
+}
+
+func (ui UserInterface) Println(s string) {
+	fmt.Fprintln(ui.Screen, s)
+}
+
+func (ui UserInterface) Fatalf(s string, d ...interface{}) {
+	fmt.Fprintf(ui.Screen, s, d...)
+	os.Exit(1)
 }

@@ -90,6 +90,22 @@ func (game *Game) Play() {
 
 	output, done := computer.Exec(input)
 
+	position := make(chan byte)
+	go func() {
+		defer close(position)
+		for {
+			buf := make([]byte, 1)
+			numBytes, err := ui.Read(buf)
+			if err != nil {
+				fatal(err)
+			}
+			if numBytes < 1 {
+				position <- 0
+			}
+			position <- buf[0]
+		}
+	}()
+
 	for {
 		start := time.Now()
 
@@ -108,16 +124,15 @@ func (game *Game) Play() {
 				case x := <-output:
 					y, tile := <-output, <-output
 					if x == -1 && y == 0 {
-						// ui.Printf("[ SCORE %d ]\n", tile)
+						ui.Printf("[ SCORE %d ]\n", tile)
 					} else {
 						game.Grid[Coord{x, y}] = Tile(tile)
 					}
-				case input <- game.ProcessInput():
+				case input <- game.ProcessInput(position):
 					break gameloop
 				default:
 				}
 			}
-
 			game.Render()
 
 			fps := 5
@@ -160,31 +175,15 @@ func draw(buffer []byte) {
 	}
 }
 
-func (game Game) ProcessInput() int {
-	pos := make(chan byte)
-
-	go func() {
-		defer close(pos)
-		for {
-			buf := make([]byte, 1)
-			numBytes, err := ui.Read(buf)
-			if err != nil {
-				fatal(err)
-			}
-			if numBytes < 1 {
-				pos <- buf[0]
-			}
-		}
-	}()
-
+func (game Game) ProcessInput(pos <-chan byte) int {
 	select {
 	case p := <-pos:
 		switch p {
-		case 0x2c: // ,
+		case 44: // ,
 			return -1
-		case 0x2e: // .
+		case 46: // .
 			return 1
-		case 0x71: // q
+		case 113: // q
 			ui.Fatalf("[ QUIT ]")
 		}
 	default:

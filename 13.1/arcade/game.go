@@ -36,12 +36,12 @@ func init() {
 	ScreenHeight = int(h)
 }
 
-func PowerOn() (func() error, error) {
+func PowerOn() func() error {
 	ui.Println("[ POWER ON ]")
 
 	reset, err := terminator.RawMode()
 	if err != nil {
-		return reset, err
+		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
 	}
 
 	term = terminal.NewTerminal(ui, "")
@@ -50,19 +50,21 @@ func PowerOn() (func() error, error) {
 
 	ui.Println("[ READY ]")
 
-	return reset, nil
+	return reset
 }
 
-func LoadGame(prgm string) (*Game, error) {
+func LoadGame(prgm string) *Game {
 	ui.Println("[ LOAD GAME ]")
 
 	game := &Game{make(map[Coord]Tile)}
 	computer.UpgradeMemory(len(prgm))
-	err := computer.Load(prgm)
+	if err := computer.Load(prgm); err != nil {
+		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+	}
 
 	ui.Println("[ READY ]")
 
-	return game, err
+	return game
 }
 
 type Game struct {
@@ -93,6 +95,7 @@ func (game *Game) Play() {
 			ui.Println("[ GAME OVER ]")
 			return
 		default:
+			ui.Println("[ DEBUG ]")
 			if err := game.Update(output, input); err != nil {
 				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
 			}
@@ -115,7 +118,6 @@ func (game Game) NumTiles(tile Tile) (num int) {
 
 func (game *Game) Update(req <-chan int, res chan<- int) error {
 	x, y, tile := <-req, <-req, <-req
-	ui.Fatalf("[ DEBUG ]\n")
 
 	// Show the score in the segment display in this case
 	if x == -1 && y == 0 {

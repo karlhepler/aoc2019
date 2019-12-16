@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
+	"time"
 
 	"github.com/karlhepler/aoc2019/13.2/terminator"
 	"github.com/karlhepler/aoc2019/intcode"
@@ -26,22 +26,23 @@ func init() {
 
 	w, err := tdim.Width()
 	if err != nil {
-		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+		fatal(err)
 	}
 	ScreenWidth = int(w)
 	h, err := tdim.Height()
 	if err != nil {
-		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+		fatal(err)
 	}
 	ScreenHeight = int(h)
 }
 
 func PowerOn() func() error {
 	ui.Println("[ POWER ON ]")
+	ui.Printf("[ DISPLAY SIZE %dx%d ]\n", ScreenWidth, ScreenHeight)
 
 	reset, err := terminator.RawMode()
 	if err != nil {
-		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+		fatal(err)
 	}
 
 	term = terminal.NewTerminal(ui, "")
@@ -59,7 +60,7 @@ func LoadGame(prgm string) *Game {
 	game := &Game{make(map[Coord]Tile)}
 	computer.UpgradeMemory(len(prgm))
 	if err := computer.Load(prgm); err != nil {
-		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+		fatal(err)
 	}
 
 	ui.Println("[ READY ]")
@@ -86,22 +87,22 @@ func (game *Game) Play() {
 	output, done := computer.Exec(input)
 
 	for {
+		start := time.Now()
+
 		select {
 		case err := <-done:
 			if err != nil {
-				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+				fatal(err)
 			}
 
 			ui.Println("[ GAME OVER ]")
 			return
 		default:
-			game.Update(output)
-			if err := game.Render(); err != nil {
-				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
-			}
-			if err := game.ProcessInput(input); err != nil {
-				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
-			}
+			game.UpdateState(output)
+			game.Render()
+			game.ProcessInput(input)
+
+			time.Sleep(time.Duration(16600*int64(time.Microsecond) - time.Since(start).Microseconds()))
 		}
 	}
 
@@ -116,33 +117,62 @@ func (game Game) NumTiles(tile Tile) (num int) {
 	return
 }
 
-func (game *Game) Update(output <-chan int) {
+func (game *Game) UpdateState(state <-chan int) {
 	var i, x, y, tile int
-	for data := range output {
+	for {
 		switch i % 3 {
 		case 0:
-			x = data
+			x = <-state
 		case 1:
-			y = data
+			y = <-state
 		case 2:
-			tile = data
+			tile = <-state
 		}
 		i++
 
 		// Show the score in the segment display in this case
 		if x == -1 && y == 0 {
 			ui.Printf("[ SCORE %d ]\n", tile)
+			return
 		}
 
 		game.Grid[Coord{x, y}] = Tile(tile)
 	}
 }
 
-func (game Game) ProcessInput(input chan<- int) error {
+func (game Game) Render() {
+	// Build the buffer
+	buffer := make([]byte, ScreenWidth*ScreenHeight)
+	for y := 0; y < ScreenHeight; y++ {
+		// Generate the byte slice to render
+		for x := 0; x < ScreenWidth; x++ {
+			buffer[x*(y-1)+x] = game.Grid[Coord{x, y}].Byte()
+		}
+	}
+
+	// Clear the screen
+	draw(make([]byte, ScreenWidth*ScreenHeight))
+
+	// Write the buffer to the screen
+	draw(buffer)
+}
+
+func draw(buffer []byte) {
+	numbytes, err := ui.Screen.Write(buffer)
+
+	if err != nil {
+		fatal(err)
+	}
+	if numbytes != ScreenWidth*ScreenHeight {
+		fatal(fmt.Errorf("incomplete render: %d/%d bytes", numbytes, ScreenWidth*ScreenHeight))
+	}
+}
+
+func (game Game) ProcessInput(input chan<- int) {
 	position := make([]byte, 1)
 	_, err := ui.Joystick.Read(position)
 	if err != nil {
-		return err
+		fatal(err)
 	}
 
 	switch position[0] {
@@ -155,37 +185,6 @@ func (game Game) ProcessInput(input chan<- int) error {
 	default:
 		input <- 0
 	}
-
-	return nil
-}
-
-func (game Game) Render() error {
-	clear := exec.Command("clear")
-	clear.Stdout = ui.Screen
-	if err := clear.Run(); err != nil {
-		return err
-	}
-
-	// Build the buffer
-	buffer := make([]byte, ScreenWidth*ScreenHeight)
-	for y := 0; y < ScreenHeight; y++ {
-		// Generate the byte slice to render
-		for x := 0; x < ScreenWidth; x++ {
-			buffer[x*y+x] = game.Grid[Coord{x, y}].Byte()
-		}
-	}
-
-	// Write the buffer to the screen
-	numbytes, err := ui.Screen.Write(buffer)
-
-	if err != nil {
-		return err
-	}
-	if numbytes != ScreenWidth*ScreenHeight {
-		return fmt.Errorf("incomplete render: %d/%d bytes", numbytes, ScreenWidth*ScreenHeight)
-	}
-
-	return nil
 }
 
 type Coord [2]int
@@ -240,4 +239,8 @@ func (ui UserInterface) Printf(s string, d ...interface{}) {
 func (ui UserInterface) Fatalf(s string, d ...interface{}) {
 	ui.Printf(s, d...)
 	os.Exit(1)
+}
+
+func fatal(err error) {
+	ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
 }

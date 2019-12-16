@@ -13,8 +13,8 @@ import (
 )
 
 const (
-	ScreenWidth  = 300
-	ScreenHeight = 300
+	ScreenWidth  = 640
+	ScreenHeight = 480
 )
 
 var ui UserInterface
@@ -107,32 +107,27 @@ func (game *Game) Update(req <-chan int, res chan<- int) error {
 func (game Game) Render() error {
 	clear := exec.Command("clear")
 	clear.Stdout = ui.Screen
-	clear.Run()
+	if err := clear.Run(); err != nil {
+		return err
+	}
 
-	screenWidth, screenHeight := 300, 300
-	buffer := make([]byte, screenWidth*screenHeight)
-
-	for y := 0; y < scrnHeight; y++ {
+	// Build the buffer
+	buffer := make([]byte, ScreenWidth*ScreenHeight)
+	for y := 0; y < ScreenHeight; y++ {
 		// Generate the byte slice to render
-		line := make([]byte, rob.HullDimensions[0]+1)
-		for x := 0; x < rob.HullDimensions[0]; x++ {
-			pos := Coord{x, y}
-			if pos == rob.Position {
-				line[x] = rob.Direction.Byte()
-			} else {
-				line[x] = rob.PaintedPanels[Coord{x, y}].Byte()
-			}
+		for x := 0; x < ScreenWidth-1; x++ {
+			buffer[x*y+x] = game.Grid[Coord{x, y}].Byte()
 		}
-		line[rob.HullDimensions[0]] = '\n'
+		buffer[ScreenWidth] = '\n'
+	}
 
-		// Render the byte slice
-		numbytes, err := w.Write(line)
-		if err != nil {
-			return err
-		}
-		if numbytes != rob.HullDimensions[0]+1 {
-			return fmt.Errorf("incomplete render: %d/%d bytes", numbytes, rob.HullDimensions[0]+1)
-		}
+	// Write the buffer to the screen
+	numbytes, err := ui.Screen.Write(buffer)
+	if err != nil {
+		return err
+	}
+	if numbytes != ScreenWidth*ScreenHeight {
+		return fmt.Errorf("incomplete render: %d/%d bytes", numbytes, ScreenWidth*ScreenHeight)
 	}
 
 	return nil

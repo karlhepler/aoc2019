@@ -6,7 +6,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/karlhepler/aoc2019/13.2/terminator"
+	"github.com/karlhepler/aoc2019/13.1/terminator"
 	"github.com/karlhepler/aoc2019/intcode"
 	tdim "github.com/wayneashleyberry/terminal-dimensions"
 	"golang.org/x/crypto/ssh/terminal"

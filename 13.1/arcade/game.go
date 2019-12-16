@@ -28,12 +28,12 @@ func init() {
 	if err != nil {
 		fatal(err)
 	}
-	ScreenWidth = int(w)
+	ScreenWidth = int(w) + 1
 	h, err := tdim.Height()
 	if err != nil {
 		fatal(err)
 	}
-	ScreenHeight = int(h)
+	ScreenHeight = int(h) + 1
 }
 
 func PowerOn() func() error {
@@ -100,7 +100,7 @@ func (game *Game) Play() {
 		default:
 			game.UpdateState(output)
 			game.Render()
-			game.ProcessInput(input)
+			// game.ProcessInput(input)
 
 			time.Sleep(time.Duration(16600*int64(time.Microsecond) - time.Since(start).Microseconds()))
 		}
@@ -146,7 +146,7 @@ func (game Game) Render() {
 	for y := 0; y < ScreenHeight; y++ {
 		// Generate the byte slice to render
 		for x := 0; x < ScreenWidth; x++ {
-			buffer[x*(y-1)+x] = game.Grid[Coord{x, y}].Byte()
+			buffer[x+y*(ScreenWidth-1)] = game.Grid[Coord{x, y}].Byte()
 		}
 	}
 
@@ -171,16 +171,16 @@ func draw(buffer []byte) {
 func (game Game) ProcessInput(input chan<- int) {
 	// TODO how to read input in the terminal?
 
-	switch /* INPUT */ {
-	case 80: // left arrow
-		input <- -1
-	case 79: // right arrow
-		input <- 1
-	case 41: // escape
-		ui.Fatalf("[ ESCAPE ]")
-	default:
-		input <- 0
-	}
+	// switch /* INPUT */ {
+	// case 80: // left arrow
+	// 	input <- -1
+	// case 79: // right arrow
+	// 	input <- 1
+	// case 41: // escape
+	// 	ui.Fatalf("[ ESCAPE ]")
+	// default:
+	// 	input <- 0
+	// }
 }
 
 type Coord [2]int

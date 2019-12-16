@@ -1,7 +1,6 @@
 package arcade
 
 import (
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -9,12 +8,13 @@ import (
 
 	"github.com/karlhepler/aoc2019/13.2/terminator"
 	"github.com/karlhepler/aoc2019/intcode"
+	tdim "github.com/wayneashleyberry/terminal-dimensions"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
-const (
-	ScreenWidth  = 640
-	ScreenHeight = 480
+var (
+	ScreenWidth  int
+	ScreenHeight int
 )
 
 var ui UserInterface
@@ -23,6 +23,17 @@ var computer *intcode.Computer
 
 func init() {
 	ui = UserInterface{os.Stdin, os.Stdout}
+
+	w, err := tdim.Width()
+	if err != nil {
+		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+	}
+	ScreenWidth = int(w)
+	h, err := tdim.Height()
+	if err != nil {
+		ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+	}
+	ScreenHeight = int(h)
 }
 
 func PowerOn() (func() error, error) {
@@ -34,6 +45,7 @@ func PowerOn() (func() error, error) {
 	}
 
 	term = terminal.NewTerminal(ui, "")
+	term.SetSize(ScreenWidth, ScreenHeight)
 	computer = intcode.NewComputer()
 
 	ui.Println("[ READY ]")
@@ -64,6 +76,8 @@ func (game *Game) InsertQuarters() {
 }
 
 func (game *Game) Play() {
+	ui.Println("[ PLAY GAME ]")
+
 	input := make(chan int)
 	defer close(input)
 
@@ -100,8 +114,16 @@ func (game Game) NumTiles(tile Tile) (num int) {
 }
 
 func (game *Game) Update(req <-chan int, res chan<- int) error {
-	x, y, tile := <-req, <-req, Tile(<-req)
-	game.Grid[Coord{x, y}] = tile
+	x, y, tile := <-req, <-req, <-req
+	ui.Fatalf("[ DEBUG ]\n")
+
+	// Show the score in the segment display in this case
+	if x == -1 && y == 0 {
+		ui.Printf("[ SCORE %d ]\n", tile)
+		return nil
+	}
+
+	game.Grid[Coord{x, y}] = Tile(tile)
 
 	position := make([]byte, 1)
 	_, err := ui.Joystick.Read(position)
@@ -115,7 +137,7 @@ func (game *Game) Update(req <-chan int, res chan<- int) error {
 	case 79: // right arrow
 		res <- 1
 	case 41: // escape
-		return errors.New("you pressed the power button")
+		ui.Fatalf("[ POWER OFF ]")
 	default:
 		res <- 0
 	}
@@ -197,7 +219,11 @@ func (ui UserInterface) Println(s string) {
 	fmt.Fprintln(ui.Screen, s)
 }
 
-func (ui UserInterface) Fatalf(s string, d ...interface{}) {
+func (ui UserInterface) Printf(s string, d ...interface{}) {
 	fmt.Fprintf(ui.Screen, s, d...)
+}
+
+func (ui UserInterface) Fatalf(s string, d ...interface{}) {
+	ui.Printf(s, d...)
 	os.Exit(1)
 }

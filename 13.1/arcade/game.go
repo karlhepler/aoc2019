@@ -169,13 +169,9 @@ func draw(buffer []byte) {
 }
 
 func (game Game) ProcessInput(input chan<- int) {
-	position := make([]byte, 1)
-	_, err := ui.Joystick.Read(position)
-	if err != nil {
-		fatal(err)
-	}
+	// TODO how to read input in the terminal?
 
-	switch position[0] {
+	switch /* INPUT */ {
 	case 80: // left arrow
 		input <- -1
 	case 79: // right arrow

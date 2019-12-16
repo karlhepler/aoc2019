@@ -95,11 +95,11 @@ func (game *Game) Play() {
 			ui.Println("[ GAME OVER ]")
 			return
 		default:
-			ui.Println("[ DEBUG ]")
-			if err := game.Update(output, input); err != nil {
+			game.Update(output)
+			if err := game.Render(); err != nil {
 				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
 			}
-			if err := game.Render(); err != nil {
+			if err := game.ProcessInput(input); err != nil {
 				ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
 			}
 		}
@@ -116,17 +116,29 @@ func (game Game) NumTiles(tile Tile) (num int) {
 	return
 }
 
-func (game *Game) Update(req <-chan int, res chan<- int) error {
-	x, y, tile := <-req, <-req, <-req
+func (game *Game) Update(output <-chan int) {
+	var i, x, y, tile int
+	for data := range output {
+		switch i % 3 {
+		case 0:
+			x = data
+		case 1:
+			y = data
+		case 2:
+			tile = data
+		}
+		i++
 
-	// Show the score in the segment display in this case
-	if x == -1 && y == 0 {
-		ui.Printf("[ SCORE %d ]\n", tile)
-		return nil
+		// Show the score in the segment display in this case
+		if x == -1 && y == 0 {
+			ui.Printf("[ SCORE %d ]\n", tile)
+		}
+
+		game.Grid[Coord{x, y}] = Tile(tile)
 	}
+}
 
-	game.Grid[Coord{x, y}] = Tile(tile)
-
+func (game Game) ProcessInput(input chan<- int) error {
 	position := make([]byte, 1)
 	_, err := ui.Joystick.Read(position)
 	if err != nil {
@@ -135,13 +147,13 @@ func (game *Game) Update(req <-chan int, res chan<- int) error {
 
 	switch position[0] {
 	case 80: // left arrow
-		res <- -1
+		input <- -1
 	case 79: // right arrow
-		res <- 1
+		input <- 1
 	case 41: // escape
-		ui.Fatalf("[ POWER OFF ]")
+		ui.Fatalf("[ ESCAPE ]")
 	default:
-		res <- 0
+		input <- 0
 	}
 
 	return nil
@@ -158,14 +170,14 @@ func (game Game) Render() error {
 	buffer := make([]byte, ScreenWidth*ScreenHeight)
 	for y := 0; y < ScreenHeight; y++ {
 		// Generate the byte slice to render
-		for x := 0; x < ScreenWidth-1; x++ {
+		for x := 0; x < ScreenWidth; x++ {
 			buffer[x*y+x] = game.Grid[Coord{x, y}].Byte()
 		}
-		buffer[ScreenWidth] = '\n'
 	}
 
 	// Write the buffer to the screen
 	numbytes, err := ui.Screen.Write(buffer)
+
 	if err != nil {
 		return err
 	}

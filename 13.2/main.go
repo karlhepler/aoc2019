@@ -7,7 +7,8 @@ import (
 
 func main() {
 	// Power on the arcade and defer power off
-	defer arcade.PowerOn()
+	powerOff := arcade.PowerOn()
+	defer powerOff()
 
 	// Load the game
 	breakout := arcade.LoadGame(<-input.Lines("input/13.1"))

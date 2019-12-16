@@ -22,7 +22,11 @@ var term *terminal.Terminal
 var computer *intcode.Computer
 
 func init() {
-	ui = UserInterface{os.Stdin, os.Stdout}
+	tty, err := os.OpenFile("/dev/tty", os.O_RDWR, 0755)
+	if err != nil {
+		panic(err)
+	}
+	ui = UserInterface{tty}
 
 	w, err := tdim.Width()
 	if err != nil {
@@ -98,14 +102,28 @@ func (game *Game) Play() {
 			ui.Println("[ GAME OVER ]")
 			return
 		default:
-			game.UpdateState(output)
-			game.Render()
-			// game.ProcessInput(input)
+		gameloop:
+			for {
+				select {
+				case x := <-output:
+					y, tile := <-output, <-output
+					if x == -1 && y == 0 {
+						// ui.Printf("[ SCORE %d ]\n", tile)
+					} else {
+						game.Grid[Coord{x, y}] = Tile(tile)
+					}
+				case input <- game.ProcessInput():
+					break gameloop
+				default:
+				}
+			}
 
-			time.Sleep(time.Duration(16600*int64(time.Microsecond) - time.Since(start).Microseconds()))
+			game.Render()
+
+			fps := 5
+			time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
 		}
 	}
-
 }
 
 func (game Game) NumTiles(tile Tile) (num int) {
@@ -115,29 +133,6 @@ func (game Game) NumTiles(tile Tile) (num int) {
 		}
 	}
 	return
-}
-
-func (game *Game) UpdateState(state <-chan int) {
-	var i, x, y, tile int
-	for {
-		switch i % 3 {
-		case 0:
-			x = <-state
-		case 1:
-			y = <-state
-		case 2:
-			tile = <-state
-		}
-		i++
-
-		// Show the score in the segment display in this case
-		if x == -1 && y == 0 {
-			ui.Printf("[ SCORE %d ]\n", tile)
-			return
-		}
-
-		game.Grid[Coord{x, y}] = Tile(tile)
-	}
 }
 
 func (game Game) Render() {
@@ -150,15 +145,12 @@ func (game Game) Render() {
 		}
 	}
 
-	// Clear the screen
-	draw(make([]byte, ScreenWidth*ScreenHeight))
-
 	// Write the buffer to the screen
 	draw(buffer)
 }
 
 func draw(buffer []byte) {
-	numbytes, err := ui.Screen.Write(buffer)
+	numbytes, err := ui.Write(buffer)
 
 	if err != nil {
 		fatal(err)
@@ -168,19 +160,37 @@ func draw(buffer []byte) {
 	}
 }
 
-func (game Game) ProcessInput(input chan<- int) {
-	// TODO how to read input in the terminal?
+func (game Game) ProcessInput() int {
+	pos := make(chan byte)
 
-	// switch /* INPUT */ {
-	// case 80: // left arrow
-	// 	input <- -1
-	// case 79: // right arrow
-	// 	input <- 1
-	// case 41: // escape
-	// 	ui.Fatalf("[ ESCAPE ]")
-	// default:
-	// 	input <- 0
-	// }
+	go func() {
+		defer close(pos)
+		for {
+			buf := make([]byte, 1)
+			numBytes, err := ui.Read(buf)
+			if err != nil {
+				fatal(err)
+			}
+			if numBytes < 1 {
+				pos <- buf[0]
+			}
+		}
+	}()
+
+	select {
+	case p := <-pos:
+		switch p {
+		case 0x2c: // ,
+			return -1
+		case 0x2e: // .
+			return 1
+		case 0x71: // q
+			ui.Fatalf("[ QUIT ]")
+		}
+	default:
+	}
+
+	return 0
 }
 
 type Coord [2]int
@@ -212,24 +222,15 @@ const (
 )
 
 type UserInterface struct {
-	Joystick io.Reader
-	Screen   io.Writer
+	io.ReadWriter
 }
 
-func (ui UserInterface) Read(p []byte) (n int, err error) {
-	return ui.Joystick.Read(p)
-}
-
-func (ui UserInterface) Write(p []byte) (n int, err error) {
-	return ui.Screen.Write(p)
-}
-
-func (ui UserInterface) Println(s string) {
-	fmt.Fprintln(ui.Screen, s)
+func (ui UserInterface) Println(s interface{}) {
+	fmt.Fprintln(ui, s)
 }
 
 func (ui UserInterface) Printf(s string, d ...interface{}) {
-	fmt.Fprintf(ui.Screen, s, d...)
+	fmt.Fprintf(ui, s, d...)
 }
 
 func (ui UserInterface) Fatalf(s string, d ...interface{}) {

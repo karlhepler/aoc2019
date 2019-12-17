@@ -26,6 +26,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
 	ui = UserInterface{tty}
 
 	w, err := tdim.Width()
@@ -90,6 +91,16 @@ func (game *Game) Play() {
 
 	output, done := computer.Exec(input)
 
+	dirchan := make(chan int)
+	go func() {
+		defer close(dirchan)
+		for {
+			dirchan <- game.GetDirection()
+		}
+	}()
+
+	direction := 0
+
 	for {
 		start := time.Now()
 
@@ -102,8 +113,6 @@ func (game *Game) Play() {
 			ui.Println("[ GAME OVER ]")
 			return
 		default:
-			dirchan := game.GetDirection()
-			direction := 0
 		gameloop:
 			for {
 				select {
@@ -114,10 +123,8 @@ func (game *Game) Play() {
 					} else {
 						game.Grid[Coord{x, y}] = Tile(tile)
 					}
-				case input <- 0:
-					break gameloop
 				case direction = <-dirchan:
-					input <- direction
+				case input <- direction:
 					break gameloop
 				default:
 				}
@@ -130,32 +137,22 @@ func (game *Game) Play() {
 	}
 }
 
-func (game Game) GetDirection() <-chan int {
-	direction := make(chan int)
+func (game Game) GetDirection() int {
+	buf := make([]byte, 3)
+	if _, err := ui.Read(buf); err != nil {
+		fatal(err)
+	}
 
-	go func() {
-		defer close(direction)
+	switch {
+	case equal(buf, []byte{27, 91, 68}): // left arrow
+		return -1
+	case equal(buf, []byte{27, 91, 67}): // right arrow
+		return 1
+	case equal(buf, []byte{113, 0, 0}) || equal(buf, []byte{27, 0, 0}): // q or esc
+		ui.Fatalf("[ QUIT ]")
+	}
 
-		buf := make([]byte, 1)
-		numBytes, err := ui.Read(buf)
-
-		switch {
-		case err != nil:
-			fatal(err)
-		case numBytes < 1:
-			direction <- 0
-		case buf[0] == 44: // ,
-			direction <- -1
-		case buf[0] == 46: // .
-			direction <- 1
-		case buf[0] == 113: // q
-			ui.Fatalf("[ QUIT ]")
-		default:
-			direction <- 0
-		}
-	}()
-
-	return direction
+	return 0
 }
 
 func (game Game) NumTiles(tile Tile) (num int) {
@@ -239,4 +236,16 @@ func (ui UserInterface) Fatalf(s string, d ...interface{}) {
 
 func fatal(err error) {
 	ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+}
+
+func equal(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }

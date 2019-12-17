@@ -5,7 +5,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"time"
 
 	"github.com/karlhepler/aoc2019/13.1/terminator"
 	"github.com/karlhepler/aoc2019/intcode"
@@ -92,18 +91,16 @@ func (game *Game) Play() {
 
 	output, done := computer.Exec(input)
 
-	dirchan := make(chan int)
-	go func() {
-		defer close(dirchan)
-		for {
-			dirchan <- game.GetDirection()
-		}
-	}()
-
-	direction := 0
+	// dirchan := make(chan int)
+	// go func() {
+	// 	defer close(dirchan)
+	// 	for {
+	// 		dirchan <- game.GetDirection()
+	// 	}
+	// }()
 
 	for {
-		start := time.Now()
+		// start := time.Now()
 
 		for {
 			select {
@@ -120,11 +117,11 @@ func (game *Game) Play() {
 				} else {
 					game.Grid[Coord{x, y}] = Tile(tile)
 				}
-			case direction = <-dirchan:
-			case input <- direction:
+			// case direction = <-dirchan:
+			case input <- game.Direction():
 				game.Render()
-				fps := 5
-				time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
+				// fps := 5
+				// time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
 			default:
 			}
 		}
@@ -157,6 +154,35 @@ func (game Game) NumTiles(tile Tile) (num int) {
 		}
 	}
 	return
+}
+
+func (game Game) Paddle() Coord {
+	for coord, t := range game.Grid {
+		if t == PaddleTile {
+			return coord
+		}
+	}
+	return Coord{}
+}
+
+func (game Game) Ball() Coord {
+	for coord, t := range game.Grid {
+		if t == BallTile {
+			return coord
+		}
+	}
+	return Coord{}
+}
+
+func (game Game) Direction() int {
+	offset := game.Paddle()[0] - game.Ball()[0]
+	switch {
+	case offset > 0:
+		return -1
+	case offset < 0:
+		return 1
+	}
+	return 0
 }
 
 func (game Game) Render() {

@@ -104,36 +104,30 @@ func (game *Game) Play() {
 	for {
 		start := time.Now()
 
-		select {
-		case err := <-done:
-			if err != nil {
-				fatal(err)
-			}
-
-			ui.Println("[ GAME OVER ]")
-			return
-		default:
-		gameloop:
-			for {
-				select {
-				case x := <-output:
-					y, tile := <-output, <-output
-					if x == -1 && y == 0 {
-						ui.Printf("[ SCORE %d ]\n", tile)
-					} else {
-						game.Grid[Coord{x, y}] = Tile(tile)
-					}
-				case direction = <-dirchan:
-				case input <- direction:
-					break gameloop
-				default:
+		for {
+			select {
+			case err := <-done:
+				if err != nil {
+					fatal(err)
 				}
+				ui.Println("[ GAME OVER ]")
+				return
+			case x := <-output:
+				y, tile := <-output, <-output
+				if x == -1 && y == 0 {
+					ui.Printf("[ SCORE %d ]\n", tile)
+				} else {
+					game.Grid[Coord{x, y}] = Tile(tile)
+				}
+			case direction = <-dirchan:
+			case input <- direction:
+				game.Render()
+				fps := 5
+				time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
+			default:
 			}
-			game.Render()
-
-			fps := 5
-			time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
 		}
+
 	}
 }
 

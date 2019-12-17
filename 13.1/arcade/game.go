@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/exec"
 	"time"
 
 	"github.com/karlhepler/aoc2019/13.1/terminator"
@@ -143,7 +144,7 @@ func (game Game) GetDirection() int {
 	case equal(buf, []byte{27, 91, 67}): // right arrow
 		return 1
 	case equal(buf, []byte{113, 0, 0}) || equal(buf, []byte{27, 0, 0}): // q or esc
-		ui.Fatalf("[ QUIT ]")
+		ui.Fatalf("[ QUIT ]\n")
 	}
 
 	return 0
@@ -167,6 +168,11 @@ func (game Game) Render() {
 			buffer[x+y*(ScreenWidth-1)] = game.Grid[Coord{x, y}].Byte()
 		}
 	}
+
+	// Clear the buffer
+	clear := exec.Command("clear")
+	clear.Stdout = ui
+	clear.Run()
 
 	// Write the buffer to the screen
 	draw(buffer)

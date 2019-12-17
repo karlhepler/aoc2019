@@ -90,22 +90,6 @@ func (game *Game) Play() {
 
 	output, done := computer.Exec(input)
 
-	position := make(chan byte)
-	go func() {
-		defer close(position)
-		for {
-			buf := make([]byte, 1)
-			numBytes, err := ui.Read(buf)
-			if err != nil {
-				fatal(err)
-			}
-			if numBytes < 1 {
-				position <- 0
-			}
-			position <- buf[0]
-		}
-	}()
-
 	for {
 		start := time.Now()
 
@@ -118,6 +102,8 @@ func (game *Game) Play() {
 			ui.Println("[ GAME OVER ]")
 			return
 		default:
+			dirchan := game.GetDirection()
+			direction := 0
 		gameloop:
 			for {
 				select {
@@ -128,7 +114,10 @@ func (game *Game) Play() {
 					} else {
 						game.Grid[Coord{x, y}] = Tile(tile)
 					}
-				case input <- game.ProcessInput(position):
+				case input <- 0:
+					break gameloop
+				case direction = <-dirchan:
+					input <- direction
 					break gameloop
 				default:
 				}
@@ -139,6 +128,34 @@ func (game *Game) Play() {
 			time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
 		}
 	}
+}
+
+func (game Game) GetDirection() <-chan int {
+	direction := make(chan int)
+
+	go func() {
+		defer close(direction)
+
+		buf := make([]byte, 1)
+		numBytes, err := ui.Read(buf)
+
+		switch {
+		case err != nil:
+			fatal(err)
+		case numBytes < 1:
+			direction <- 0
+		case buf[0] == 44: // ,
+			direction <- -1
+		case buf[0] == 46: // .
+			direction <- 1
+		case buf[0] == 113: // q
+			ui.Fatalf("[ QUIT ]")
+		default:
+			direction <- 0
+		}
+	}()
+
+	return direction
 }
 
 func (game Game) NumTiles(tile Tile) (num int) {
@@ -173,23 +190,6 @@ func draw(buffer []byte) {
 	if numbytes != ScreenWidth*ScreenHeight {
 		fatal(fmt.Errorf("incomplete render: %d/%d bytes", numbytes, ScreenWidth*ScreenHeight))
 	}
-}
-
-func (game Game) ProcessInput(pos <-chan byte) int {
-	select {
-	case p := <-pos:
-		switch p {
-		case 44: // ,
-			return -1
-		case 46: // .
-			return 1
-		case 113: // q
-			ui.Fatalf("[ QUIT ]")
-		}
-	default:
-	}
-
-	return 0
 }
 
 type Coord [2]int

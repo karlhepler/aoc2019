@@ -1,7 +1,6 @@
 package nano
 
 import (
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -48,8 +47,6 @@ func (f Factory) OrePerFuel(reactions <-chan string) int {
 }
 
 func (f Factory) need(qty int, chem *Chemical) (total int) {
-	log.Printf("%s: HAVE %d; NEED %d\n", chem.Name, f.Stock[chem.Name], qty)
-
 	for _, input := range chem.Inputs {
 		if input.Name == "ORE" {
 			f.Stock[chem.Name] += chem.Output
@@ -61,13 +58,9 @@ func (f Factory) need(qty int, chem *Chemical) (total int) {
 		for f.Stock[input.Name] < 0 {
 			total += f.need(abs(f.Stock[input.Name]), f.Chemicals[input.Name])
 		}
-		log.Println("INPUT", f.Stock[input.Name], input.Name)
 	}
 
 	f.Stock[chem.Name] += qty
-
-	log.Println("GET", qty, chem.Name, f.Stock)
-	fmt.Println("")
 
 	return total
 }

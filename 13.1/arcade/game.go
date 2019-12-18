@@ -87,6 +87,28 @@ func (game *Game) Play() {
 
 	input := make(chan int)
 	defer close(input)
+	output, _ := computer.Exec(input)
+
+	for i := 0; i <= 38*21; i++ {
+		x, y, tile := <-output, <-output, <-output
+		game.Grid[Coord{x, y}] = Tile(tile)
+	}
+
+	for i := 0; i < 10; i++ {
+		start := time.Now()
+
+		game.Render()
+
+		fps := 5
+		time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
+	}
+}
+
+func (game *Game) Play2() {
+	ui.Println("[ PLAY GAME ]")
+
+	input := make(chan int)
+	defer close(input)
 
 	output, done := computer.Exec(input)
 

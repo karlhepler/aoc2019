@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"time"
+	"os/exec"
 
 	"github.com/karlhepler/aoc2019/13.1/terminator"
 	"github.com/karlhepler/aoc2019/intcode"
@@ -26,6 +26,7 @@ func init() {
 	if err != nil {
 		panic(err)
 	}
+
 	ui = UserInterface{tty}
 
 	w, err := tdim.Width()
@@ -112,55 +113,60 @@ func (game *Game) Play2() {
 
 	output, done := computer.Exec(input)
 
-	position := make(chan byte)
-	go func() {
-		defer close(position)
-		for {
-			buf := make([]byte, 1)
-			numBytes, err := ui.Read(buf)
-			if err != nil {
-				fatal(err)
-			}
-			if numBytes < 1 {
-				position <- 0
-			}
-			position <- buf[0]
-		}
-	}()
+	// dirchan := make(chan int)
+	// go func() {
+	// 	defer close(dirchan)
+	// 	for {
+	// 		dirchan <- game.GetDirection()
+	// 	}
+	// }()
 
 	for {
-		start := time.Now()
+		// start := time.Now()
 
-		select {
-		case err := <-done:
-			if err != nil {
-				fatal(err)
-			}
-
-			ui.Println("[ GAME OVER ]")
-			return
-		default:
-		gameloop:
-			for {
-				select {
-				case x := <-output:
-					y, tile := <-output, <-output
-					if x == -1 && y == 0 {
-						ui.Printf("[ SCORE %d ]\n", tile)
-					} else {
-						game.Grid[Coord{x, y}] = Tile(tile)
-					}
-				case input <- game.ProcessInput(position):
-					break gameloop
-				default:
+		for {
+			select {
+			case err := <-done:
+				if err != nil {
+					fatal(err)
 				}
+				ui.Println("[ GAME OVER ]")
+				return
+			case x := <-output:
+				y, tile := <-output, <-output
+				if x == -1 && y == 0 {
+					ui.Printf("[ SCORE %d ]\n", tile)
+				} else {
+					game.Grid[Coord{x, y}] = Tile(tile)
+				}
+			// case direction = <-dirchan:
+			case input <- game.Direction():
+				game.Render()
+				// fps := 5
+				// time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
+			default:
 			}
-			game.Render()
-
-			fps := 5
-			time.Sleep(time.Duration(int64((1000/fps)*1000)*int64(time.Microsecond) - time.Since(start).Microseconds()))
 		}
+
 	}
+}
+
+func (game Game) GetDirection() int {
+	buf := make([]byte, 3)
+	if _, err := ui.Read(buf); err != nil {
+		fatal(err)
+	}
+
+	switch {
+	case equal(buf, []byte{27, 91, 68}): // left arrow
+		return -1
+	case equal(buf, []byte{27, 91, 67}): // right arrow
+		return 1
+	case equal(buf, []byte{113, 0, 0}) || equal(buf, []byte{27, 0, 0}): // q or esc
+		ui.Fatalf("[ QUIT ]\n")
+	}
+
+	return 0
 }
 
 func (game Game) NumTiles(tile Tile) (num int) {
@@ -172,6 +178,35 @@ func (game Game) NumTiles(tile Tile) (num int) {
 	return
 }
 
+func (game Game) Paddle() Coord {
+	for coord, t := range game.Grid {
+		if t == PaddleTile {
+			return coord
+		}
+	}
+	return Coord{}
+}
+
+func (game Game) Ball() Coord {
+	for coord, t := range game.Grid {
+		if t == BallTile {
+			return coord
+		}
+	}
+	return Coord{}
+}
+
+func (game Game) Direction() int {
+	offset := game.Paddle()[0] - game.Ball()[0]
+	switch {
+	case offset > 0:
+		return -1
+	case offset < 0:
+		return 1
+	}
+	return 0
+}
+
 func (game Game) Render() {
 	// Build the buffer
 	buffer := make([]byte, ScreenWidth*ScreenHeight)
@@ -181,6 +216,11 @@ func (game Game) Render() {
 			buffer[x+y*(ScreenWidth-1)] = game.Grid[Coord{x, y}].Byte()
 		}
 	}
+
+	// Clear the buffer
+	clear := exec.Command("clear")
+	clear.Stdout = ui
+	clear.Run()
 
 	// Write the buffer to the screen
 	draw(buffer)
@@ -195,23 +235,6 @@ func draw(buffer []byte) {
 	if numbytes != ScreenWidth*ScreenHeight {
 		fatal(fmt.Errorf("incomplete render: %d/%d bytes", numbytes, ScreenWidth*ScreenHeight))
 	}
-}
-
-func (game Game) ProcessInput(pos <-chan byte) int {
-	select {
-	case p := <-pos:
-		switch p {
-		case 44: // ,
-			return -1
-		case 46: // .
-			return 1
-		case 113: // q
-			ui.Fatalf("[ QUIT ]")
-		}
-	default:
-	}
-
-	return 0
 }
 
 type Coord [2]int
@@ -261,4 +284,16 @@ func (ui UserInterface) Fatalf(s string, d ...interface{}) {
 
 func fatal(err error) {
 	ui.Fatalf("[ GAME ERROR ]\nERROR: %s\n", err)
+}
+
+func equal(a, b []byte) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i, v := range a {
+		if v != b[i] {
+			return false
+		}
+	}
+	return true
 }

@@ -1,79 +1,75 @@
 package nano
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
 )
 
 /*
-	9 ORE => 2 A
-	8 ORE => 3 B
-	7 ORE => 5 C
-	3 A, 4 B => 1 AB
-	5 B, 7 C => 1 BC
-	4 C, 1 A => 1 CA
-	2 AB, 3 BC, 4 CA => 1 FUEL
-
-	A{9->2}
-	B{8->3}
-	C{7->5}
-
-	A: 4
-	B: 9
-	C: 11
-	AB: 2
-	BC: 3
-	CA: 4
-
-	9 ORE
+	157 ORE => 5 NZVS
+	165 ORE => 6 DCFZ
+	44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
+	12 HKGWZ, 1 GPVTF, 8 PSHF => 9 QDVJ
+	179 ORE => 7 PSHF
+	177 ORE => 5 HKGWZ
+	7 DCFZ, 7 PSHF => 2 XJWVT
+	165 ORE => 2 GPVTF
+	3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT
 */
 
 type Input struct {
 	Name     string
-	Quantity float64
+	Quantity int
 }
 
 type Chemical struct {
 	Name   string
 	Inputs []Input
-	Output float64
+	Output int
 }
 
 func NewFactory() Factory {
 	return Factory{
 		Chemicals: make(map[string]*Chemical),
-		Stock:     make(map[string]float64),
+		Stock:     make(map[string]int),
 	}
 }
 
 type Factory struct {
 	Chemicals map[string]*Chemical
-	Stock     map[string]float64
+	Stock     map[string]int
 }
 
-func (f Factory) OrePerFuel(reactions <-chan string) float64 {
+func (f Factory) OrePerFuel(reactions <-chan string) int {
 	f.init(reactions)
 	return f.need(1, f.Chemicals["FUEL"])
 }
 
-func (f Factory) need(qty float64, chem *Chemical) (total float64) {
-	log.Println("START", qty, chem.Name, f.Stock)
+func (f Factory) need(qty int, chem *Chemical) (total int) {
+	log.Printf("%s: HAVE %d; NEED %d\n", chem.Name, f.Stock[chem.Name], qty)
+
 	for _, input := range chem.Inputs {
 		if input.Name == "ORE" {
 			f.Stock[chem.Name] += chem.Output
 			return input.Quantity
 		}
 
-		amount := (input.Quantity * qty) / chem.Output
-		f.Stock[input.Name] -= amount
-		if f.Stock[input.Name] < 0 {
-			total += f.need(math.Abs(f.Stock[input.Name]), f.Chemicals[input.Name])
+		amnt, rmdr := div(qty*input.Quantity, chem.Output)
+		f.Stock[input.Name] -= amnt + rmdr
+		for f.Stock[input.Name] < 0 {
+			total += f.need(abs(f.Stock[input.Name]), f.Chemicals[input.Name])
 		}
+		log.Println("INPUT", f.Stock[input.Name], input.Name)
 	}
+
 	f.Stock[chem.Name] += qty
-	log.Println("END", qty, chem.Name, f.Stock)
-	return
+
+	log.Println("GET", qty, chem.Name, f.Stock)
+	fmt.Println("")
+
+	return total
 }
 
 func (f Factory) init(reactions <-chan string) {
@@ -104,11 +100,22 @@ func parts(reaction string) (inputs []string, output string) {
 	return strings.Split(p[0], ", "), p[1]
 }
 
-func split(input string) (qty float64, name string) {
+func split(input string) (qty int, name string) {
 	c := strings.Split(input, " ")
-	qty, err := strconv.ParseFloat(c[0], 64)
+	qty, err := strconv.Atoi(c[0])
 	if err != nil {
 		log.Fatal(err)
 	}
 	return qty, c[1]
+}
+
+func abs(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
+
+func div(a, b int) (int, int) {
+	return a / b, a % b
 }

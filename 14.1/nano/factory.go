@@ -67,8 +67,8 @@ func (f Factory) need(qty float64, chem *Chemical) (total float64) {
 
 		amount := (input.Quantity * qty) / chem.Output
 		f.Stock[input.Name] -= amount
-		for f.Stock[input.Name] < 0 {
-			total += f.need(amount, f.Chemicals[input.Name])
+		if f.Stock[input.Name] < 0 {
+			total += f.need(math.Abs(f.Stock[input.Name]), f.Chemicals[input.Name])
 		}
 	}
 	f.Stock[chem.Name] += qty

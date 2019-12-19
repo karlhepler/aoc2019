@@ -30,8 +30,8 @@ type Chemical struct {
 	Output int
 }
 
-func NewFactory() Factory {
-	return Factory{
+func NewFactory() *Factory {
+	return &Factory{
 		Chemicals: make(map[string]*Chemical),
 		Stock:     make(map[string]int),
 	}
@@ -40,14 +40,15 @@ func NewFactory() Factory {
 type Factory struct {
 	Chemicals map[string]*Chemical
 	Stock     map[string]int
+	Rmdr      int
 }
 
-func (f Factory) OrePerFuel(reactions <-chan string) int {
+func (f *Factory) OrePerFuel(reactions <-chan string) int {
 	f.init(reactions)
 	return f.need(1, f.Chemicals["FUEL"])
 }
 
-func (f Factory) need(qty int, chem *Chemical) (total int) {
+func (f *Factory) need(qty int, chem *Chemical) (total int) {
 	for _, input := range chem.Inputs {
 		if input.Name == "ORE" {
 			f.Stock[chem.Name] += chem.Output
@@ -55,6 +56,7 @@ func (f Factory) need(qty int, chem *Chemical) (total int) {
 		}
 
 		amnt, rmdr := div(qty*input.Quantity, chem.Output)
+		f.Rmdr += rmdr
 		f.Stock[input.Name] -= amnt + rmdr
 		for f.Stock[input.Name] < 0 {
 			total += f.need(abs(f.Stock[input.Name]), f.Chemicals[input.Name])

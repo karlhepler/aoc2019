@@ -1,6 +1,7 @@
 package nano
 
 import (
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -111,4 +112,9 @@ func abs(a int) int {
 
 func div(a, b int) (int, int) {
 	return a / b, a % b
+}
+
+func debug(a string, b ...interface{}) {
+	fmt.Printf(a, b...)
+	fmt.Scanln()
 }

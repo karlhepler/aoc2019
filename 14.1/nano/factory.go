@@ -40,7 +40,6 @@ func NewFactory() *Factory {
 type Factory struct {
 	Chemicals map[string]*Chemical
 	Stock     map[string]int
-	Rmdr      int
 }
 
 func (f *Factory) OrePerFuel(reactions <-chan string) int {
@@ -56,7 +55,6 @@ func (f *Factory) need(qty int, chem *Chemical) (total int) {
 		}
 
 		amnt, rmdr := div(qty*input.Quantity, chem.Output)
-		f.Rmdr += rmdr
 		f.Stock[input.Name] -= amnt + rmdr
 		for f.Stock[input.Name] < 0 {
 			total += f.need(abs(f.Stock[input.Name]), f.Chemicals[input.Name])

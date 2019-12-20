@@ -1,7 +1,6 @@
 package nano_test
 
 import (
-	"log"
 	"testing"
 
 	"github.com/karlhepler/aoc2019/14.1/nano"
@@ -30,7 +29,6 @@ func TestOrePerFuel(t *testing.T) {
 
 		f := nano.NewFactory()
 		result := f.OrePerFuel(reactions)
-		log.Println("A CLUE?", f.Rmdr)
 
 		if result != tc.result {
 			t.Errorf(

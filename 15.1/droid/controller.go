@@ -7,12 +7,26 @@ import (
 	"github.com/karlhepler/aoc2019/intcode"
 )
 
-// The repair droid can reply with any of the following status codes
-type StatusCode byte
+// MovementCommand represents the four movement commands understood by Move.
+type MovementCommand byte
+
+func (cmd MovementCommand) valid() bool {
+	if cmd == MoveNorth || cmd == MoveSouth || cmd == MoveWest || cmd == MoveEast {
+		return true
+	}
+	return false
+}
+
+const (
+	MoveNorth MovementCommand = iota + 1
+	MoveSouth
+	MoveWest
+	MoveEast
+)
 
 const (
 	// The repair droid hit a wall. Its position has not changed.
-	StatusHitWall StatusCode = iota
+	StatusHitWall int = iota
 	// The repair droid has moved one step in the requested direction.
 	StatusMoved
 	//The repair droid has moved one step in the requested direction; its new
@@ -25,19 +39,25 @@ type Controller struct {
 	Droid *intcode.Computer
 }
 
+// MoveResponse is the data that Move sends through the returned response channel.
+type MoveResponse struct {
+	StatusCode
+	Error error
+}
+
 // Move accepts a movement command via an input instruction,
 // sends the movement command to the repair droid,
 // waits for the repair droid to finish the movement operation,
 // and reports on the status of the repair droid via an output instruction.
-func (ctrl Controller) Move(cmd MovementCommand) <-chan Response {
-	res := make(chan Response)
+func (ctrl Controller) Move(cmd MovementCommand) <-chan MoveResponse {
+	res := make(chan MoveResponse)
 	go ctrl.move(res, cmd)
 	return res
 }
 
-func (ctrl Controller) move(res chan<- Response, cmd MovementCommand) {
+func (ctrl Controller) move(res chan<- MoveResponse, cmd MovementCommand) {
 	if !cmd.valid() {
-		res <- Response{Error: fmt.Errorf("%v is an invalid movement command", cmd)}
+		res <- MoveResponse{Error: fmt.Errorf("%v is an invalid movement command", cmd)}
 		return
 	}
 
@@ -59,7 +79,7 @@ func (ctrl Controller) move(res chan<- Response, cmd MovementCommand) {
 		// Relay/"Render" all droid outputs and close the response
 		// when complete.
 		for o := range output {
-			res <- Response{StatusCode: StatusCode(o)}
+			res <- MoveResponse{StatusCode: StatusCode(o)}
 		}
 		close(res)
 		closed = true
@@ -67,7 +87,7 @@ func (ctrl Controller) move(res chan<- Response, cmd MovementCommand) {
 
 	// Wait until the droid is done and
 	if err := <-done; err != nil {
-		r := Response{Error: err}
+		r := MoveResponse{Error: err}
 		if closed == false {
 			res <- r
 		} else {
@@ -75,25 +95,3 @@ func (ctrl Controller) move(res chan<- Response, cmd MovementCommand) {
 		}
 	}
 }
-
-type Response struct {
-	StatusCode
-	Error error
-}
-
-// MovementCommand represents the four movement commands understood by Move.
-type MovementCommand byte
-
-func (cmd MovementCommand) valid() bool {
-	if cmd == MoveNorth || cmd == MoveSouth || cmd == MoveWest || cmd == MoveEast {
-		return true
-	}
-	return false
-}
-
-const (
-	MoveNorth MovementCommand = iota + 1
-	MoveSouth
-	MoveWest
-	MoveEast
-)

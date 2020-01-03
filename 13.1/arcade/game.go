@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"os/exec"
+	"time"
 
 	"github.com/karlhepler/aoc2019/13.1/terminator"
 	"github.com/karlhepler/aoc2019/intcode"

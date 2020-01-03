@@ -7,6 +7,13 @@ import (
 	"github.com/karlhepler/aoc2019/intcode"
 )
 
+const (
+	MoveNorth MovementCommand = iota + 1
+	MoveSouth
+	MoveWest
+	MoveEast
+)
+
 // MovementCommand represents the four movement commands understood by Move.
 type MovementCommand byte
 
@@ -18,20 +25,13 @@ func (cmd MovementCommand) valid() bool {
 }
 
 const (
-	MoveNorth MovementCommand = iota + 1
-	MoveSouth
-	MoveWest
-	MoveEast
-)
-
-const (
 	// The repair droid hit a wall. Its position has not changed.
 	StatusHitWall int = iota
 	// The repair droid has moved one step in the requested direction.
 	StatusMoved
 	//The repair droid has moved one step in the requested direction; its new
 	//position is the location of the oxygen system.
-	StatusMovedStop
+	StatusFound
 )
 
 // Controller is droid's public API.
@@ -41,8 +41,8 @@ type Controller struct {
 
 // MoveResponse is the data that Move sends through the returned response channel.
 type MoveResponse struct {
-	StatusCode
-	Error error
+	StatusCode int
+	Error      error
 }
 
 // Move accepts a movement command via an input instruction,
@@ -79,7 +79,7 @@ func (ctrl Controller) move(res chan<- MoveResponse, cmd MovementCommand) {
 		// Relay/"Render" all droid outputs and close the response
 		// when complete.
 		for o := range output {
-			res <- MoveResponse{StatusCode: StatusCode(o)}
+			res <- MoveResponse{StatusCode: o}
 		}
 		close(res)
 		closed = true

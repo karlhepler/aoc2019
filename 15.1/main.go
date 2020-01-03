@@ -15,10 +15,25 @@ func main() {
 
 	ctrl := &droid.Controller{Droid: newDroid()}
 
-	// TODO(kjh): How to move it around? (https://adventofcode.com/2019/day/15)
-	// I need a droid.Droid!
-	for i := 0; ; i++ {
-		code := move(ctrl, i%4+1)
+	directions := [4]droid.MovementCommand{
+		droid.MoveNorth,
+		droid.MoveEast,
+		droid.MoveSouth,
+		droid.MoveWest,
+	}
+	dir := 0
+
+	// Next, I need to create a map of visited locations
+
+search:
+	for {
+		switch code := move(ctrl, directions[dir]); code {
+		case droid.StatusHitWall:
+			dir = (dir + 1) % 4
+		case droid.StatusMoved:
+		case droid.StatusFound:
+			break search
+		}
 	}
 
 	fmt.Printf("\nTime: %v\n", time.Since(start))
@@ -35,9 +50,9 @@ func newDroid() *intcode.Computer {
 // move moves the droid controller in the given direction, renders all
 // move response status codes, and outputs the last move response
 // status code.
-func move(ctrl *droid.Controller, direction int) (code int) {
+func move(ctrl *droid.Controller, cmd droid.MovementCommand) (code int) {
 	var res droid.MoveResponse
-	for res = range ctrl.Move(direction) {
+	for res = range ctrl.Move(cmd) {
 		if res.Error != nil {
 			log.Fatalf("[ERROR] %s\n", res.Error)
 		}
@@ -52,7 +67,7 @@ func render(code int) {
 		fmt.Print("#")
 	case droid.StatusMoved:
 		fmt.Print(".")
-	case droid.StatusMovedStop:
+	case droid.StatusFound:
 		fmt.Print("X")
 	}
 }

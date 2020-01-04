@@ -50,33 +50,30 @@ type MoveResponse struct {
 // and reports on the status of the repair droid via an output instruction.
 func (ctrl Controller) Move(cmd MovementCommand) <-chan MoveResponse {
 	res := make(chan MoveResponse)
-	go ctrl.move(res, cmd)
-	return res
-}
+	go func() {
+		defer close(res)
 
-func (ctrl Controller) move(res chan<- MoveResponse, cmd MovementCommand) {
-	defer close(res)
-
-	if !cmd.valid() {
-		res <- MoveResponse{Error: fmt.Errorf("%v is an invalid movement command", cmd)}
-		return
-	}
-
-	input := make(chan int)
-	output, done := ctrl.Droid.Exec(input)
-
-	input <- int(cmd)
-	close(input)
-
-	for {
-		select {
-		case code := <-output:
-			res <- MoveResponse{StatusCode: code}
-		case err := <-done:
-			if err != nil {
-				res <- MoveResponse{Error: err}
-			}
+		if !cmd.valid() {
+			res <- MoveResponse{Error: fmt.Errorf("%v is an invalid movement command", cmd)}
 			return
 		}
-	}
+
+		input := make(chan int)
+		output, done := ctrl.Droid.Exec(input)
+
+		input <- int(cmd)
+		close(input)
+
+		for {
+			select {
+			case res <- MoveResponse{StatusCode: <-output}:
+			case err := <-done:
+				if err != nil {
+					res <- MoveResponse{Error: err}
+				}
+				return
+			}
+		}
+	}()
+	return res
 }

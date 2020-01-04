@@ -241,13 +241,12 @@ func decode(code int) (opcode int, modes [3]int, err error) {
 		return
 	}
 
-	if modes[0], err = strconv.Atoi(string(codestr[2])); err != nil {
-		return
+	for i := 0; i < 3; i++ {
+		modes[i], err = strconv.Atoi(string(codestr[2-i]))
+		if err != nil {
+			break
+		}
 	}
-	if modes[1], err = strconv.Atoi(string(codestr[1])); err != nil {
-		return
-	}
-	modes[2], err = strconv.Atoi(string(codestr[0]))
 
 	return
 }

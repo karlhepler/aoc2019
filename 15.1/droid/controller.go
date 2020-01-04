@@ -66,7 +66,8 @@ func (ctrl Controller) Move(cmd MovementCommand) <-chan MoveResponse {
 
 		for {
 			select {
-			case res <- MoveResponse{StatusCode: <-output}:
+			case code := <-output:
+				res <- MoveResponse{StatusCode: code}
 			case err := <-done:
 				if err != nil {
 					res <- MoveResponse{Error: err}

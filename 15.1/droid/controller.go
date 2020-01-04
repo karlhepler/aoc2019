@@ -2,7 +2,6 @@ package droid
 
 import (
 	"fmt"
-	"log"
 
 	"github.com/karlhepler/aoc2019/intcode"
 )
@@ -56,6 +55,8 @@ func (ctrl Controller) Move(cmd MovementCommand) <-chan MoveResponse {
 }
 
 func (ctrl Controller) move(res chan<- MoveResponse, cmd MovementCommand) {
+	defer close(res)
+
 	if !cmd.valid() {
 		res <- MoveResponse{Error: fmt.Errorf("%v is an invalid movement command", cmd)}
 		return
@@ -64,34 +65,18 @@ func (ctrl Controller) move(res chan<- MoveResponse, cmd MovementCommand) {
 	input := make(chan int)
 	output, done := ctrl.Droid.Exec(input)
 
-	// There is no guarantee that the droid is awaiting input.
-	// Therefore, this must be in a goroutine.
-	go func() {
-		// It's possible that the Move method could complete before we
-		// send to the input channel. Therefore, defer close(input)
-		// must be in here.
-		input <- int(cmd)
-		close(input)
-	}()
+	input <- int(cmd)
+	close(input)
 
-	var closed bool
-	go func() {
-		// Relay/"Render" all droid outputs and close the response
-		// when complete.
-		for o := range output {
-			res <- MoveResponse{StatusCode: o}
-		}
-		close(res)
-		closed = true
-	}()
-
-	// Wait until the droid is done and
-	if err := <-done; err != nil {
-		r := MoveResponse{Error: err}
-		if closed == false {
-			res <- r
-		} else {
-			log.Fatalf("[INTERNAL ERROR] cannot send on a closed channel\nResponse: %#v\n", r)
+	for {
+		select {
+		case code := <-output:
+			res <- MoveResponse{StatusCode: code}
+		case err := <-done:
+			if err != nil {
+				res <- MoveResponse{Error: err}
+			}
+			return
 		}
 	}
 }

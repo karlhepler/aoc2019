@@ -31,6 +31,7 @@ search:
 		case droid.StatusHitWall:
 			dir = (dir + 1) % 4
 		case droid.StatusMoved:
+			// break search here produces random results...?
 		case droid.StatusFound:
 			break search
 		}
@@ -41,7 +42,7 @@ search:
 
 func newDroid() *intcode.Computer {
 	comp := intcode.NewComputer()
-	if err := comp.Load(<-input.Lines("../input/15.1")); err != nil {
+	if err := comp.Load(<-input.Lines("input/15.1")); err != nil {
 		log.Fatal(err)
 	}
 	return comp

@@ -15,27 +15,9 @@ func main() {
 
 	ctrl := &droid.Controller{Droid: newDroid()}
 
-	directions := [4]droid.MovementCommand{
-		droid.MoveNorth,
-		droid.MoveEast,
-		droid.MoveSouth,
-		droid.MoveWest,
-	}
-	dir := 0
-
-	// Next, I need to create a map of visited locations
-
-search:
-	for {
-		switch code := move(ctrl, directions[dir]); code {
-		case droid.StatusHitWall:
-			dir = (dir + 1) % 4
-		case droid.StatusMoved:
-			// break search here produces random results...?
-		case droid.StatusFound:
-			break search
-		}
-	}
+	// The droid starts at (0,0)
+	// Dijkstra's and A* algoriths should be used to solve the problem
+	// https://www.geeksforgeeks.org/a-search-algorithm/
 
 	fmt.Printf("\nTime: %v\n", time.Since(start))
 }
